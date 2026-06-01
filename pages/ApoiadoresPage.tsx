@@ -124,10 +124,9 @@ const ApoiadoresPage: React.FC<ApoiadoresPageProps> = ({ navigateTo }) => {
     // Filtro para Apoiadores (Iterar por apoiador, agregando dados do município)
     const apoiadoresFiltrados = useMemo(() => {
         // Usa apenas os dados do servidor (para evitar duplicidade do mock anterior)
-        const totalBase = apoiadoresTotal.map(a => {
-            // Se o apoiador já vem com o município da API, usamos ele. 
-            // Caso contrário, fazemos o fallback para o join local.
-            const m = a.municipio || municipios.find(city => city.id === a.municipioId);
+            // Prioriza o município completo do state 'municipios' (que contém todos os dados políticos e votos)
+            // e cai no fallback parcial apenas se não encontrado.
+            const m = municipios.find(city => city.id === a.municipioId || city.nome.toLowerCase() === a.municipio?.nome?.toLowerCase()) || a.municipio;
             const assessor = m ? assessores.find(ass => ass.id === m.assessorId) : undefined;
             return { ...a, municipio: m, assessor };
         });
