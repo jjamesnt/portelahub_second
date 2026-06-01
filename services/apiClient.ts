@@ -336,13 +336,10 @@ class ApiClient {
 
     const currentToken = this.token || SUPABASE_ANON_KEY;
     if (currentToken) {
-      if (cleanPath.startsWith('/auth/')) {
-        // Evita enviar service_role para endpoints do Auth (GoTrue) para não causar erros de "Forbidden"
-        if (!currentToken.startsWith('sb_secret_')) {
-          headers['Authorization'] = `Bearer ${currentToken}`;
-        }
-      } else {
-        // Para qualquer outro endpoint do PostgREST, enviamos a chave para autenticação/bypass de RLS
+      // Para chaves administrativas service_role (que começam com 'sb_secret_'), NUNCA devemos enviar o cabeçalho 'Authorization: Bearer'.
+      // O gateway do Supabase no navegador valida estritamente o formato de JWT no 'Authorization', rejeitando com 401.
+      // O banco de dados PostgREST usa com sucesso a chave 'apikey' (já enviada acima) para dar bypass no RLS.
+      if (!currentToken.startsWith('sb_secret_')) {
         headers['Authorization'] = `Bearer ${currentToken}`;
       }
     }
