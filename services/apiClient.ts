@@ -360,10 +360,11 @@ class ApiClient {
       clearTimeout(timeoutId);
 
       if (response.status === 401 && cleanPath !== '/auth/login') {
-        console.error('[DEBUG 401] Ocorreu um erro 401 não autorizado para a rota:', cleanPath);
+        const tokenSnippet = this.token ? `${this.token.substring(0, 12)}... (len: ${this.token.length})` : 'Nenhum';
+        console.error('[DEBUG 401] Ocorreu um erro 401 não autorizado para a rota:', cleanPath, 'Token:', tokenSnippet);
         // localStorage.removeItem('portela_hub_token');
         // window.location.href = '/login';
-        throw new Error('Não autorizado');
+        throw new Error(`Não autorizado (401) ao acessar ${cleanPath}. Token: ${tokenSnippet}`);
       }
 
       if (!response.ok) {
