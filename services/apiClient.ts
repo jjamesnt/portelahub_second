@@ -315,11 +315,9 @@ class ApiClient {
       clearTimeout(timeoutId);
 
       if (response.status === 401 && cleanPath !== '/auth/login') {
-        console.error('*** ERRO 401 ENCONTRADO NA ROTA:', cleanPath, 'URL COMPLETA:', url);
-        // Desativado temporariamente para depuração:
-        // localStorage.removeItem('portela_hub_token');
-        // window.location.href = '/login';
-        throw new Error(`Não autorizado na rota: ${cleanPath}`);
+        localStorage.removeItem('portela_hub_token');
+        window.location.href = '/login';
+        throw new Error('Não autorizado');
       }
 
       if (!response.ok) {
