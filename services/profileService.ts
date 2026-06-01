@@ -6,8 +6,8 @@ export const profileService = {
    * Busca todos os usuários cadastrados no sistema.
    */
   async getProfiles(): Promise<Profile[]> {
-    const response = await apiClient.get<{ users: Profile[] }>('/api/users');
-    return response.users;
+    const response = await apiClient.get<any>('/api/users');
+    return Array.isArray(response) ? response : (response.users || response.profiles || []);
   },
 
   /**
