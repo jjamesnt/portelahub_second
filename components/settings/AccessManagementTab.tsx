@@ -41,6 +41,45 @@ export const AccessManagementTab: React.FC<AccessManagementTabProps> = ({
     const [showSuccessModal, setShowSuccessModal] = useState(false);
     const [successMessage, setSuccessMessage] = useState('');
     const [editingPermissionsId, setEditingPermissionsId] = useState<string | null>(null);
+    const [testResult, setTestResult] = useState<string | null>(null);
+    const [runningTest, setRunningTest] = useState(false);
+
+    const runApiTest = async () => {
+        setRunningTest(true);
+        setTestResult(null);
+        try {
+            const url = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/profiles?select=*`;
+            const key = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+            
+            const start = Date.now();
+            const res = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'apikey': key
+                }
+            });
+            const duration = Date.now() - start;
+            const bodyText = await res.text();
+            
+            setTestResult(JSON.stringify({
+                status: res.status,
+                statusText: res.statusText,
+                durationMs: duration,
+                bodySnippet: bodyText.substring(0, 150) + (bodyText.length > 150 ? '...' : ''),
+                headers: {
+                    contentType: res.headers.get('content-type'),
+                    contentRange: res.headers.get('content-range')
+                }
+            }, null, 2));
+        } catch (err: any) {
+            setTestResult(JSON.stringify({
+                error: err.message || String(err),
+                stack: err.stack
+            }, null, 2));
+        } finally {
+            setRunningTest(false);
+        }
+    };
 
     const navItems = [
         { id: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
@@ -98,6 +137,22 @@ export const AccessManagementTab: React.FC<AccessManagementTabProps> = ({
                         <p>• Chave Anon (Vite): <span className="text-blue-500">{import.meta.env.VITE_SUPABASE_ANON_KEY ? `${import.meta.env.VITE_SUPABASE_ANON_KEY.substring(0, 12)}... (len: ${import.meta.env.VITE_SUPABASE_ANON_KEY.length})` : 'Não configurada'}</span></p>
                         <p>• Token Salvo: <span className="text-blue-500">{localStorage.getItem('portela_hub_token') ? 'Ativo (Salvo no Navegador)' : 'Nenhum'}</span></p>
                         <p>• E-mail Conectado: <span className="text-blue-500">{localStorage.getItem('portela_hub_email') || 'Nenhum'}</span></p>
+                        
+                        <div className="pt-3 text-center">
+                            <button
+                                type="button"
+                                onClick={runApiTest}
+                                disabled={runningTest}
+                                className="px-3 py-1.5 bg-blue-550 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 rounded-lg text-[9px] font-black uppercase tracking-wider hover:bg-blue-600 hover:text-white transition-all disabled:opacity-50"
+                            >
+                                {runningTest ? 'Executando Teste...' : '⚙️ Executar Autoteste de API'}
+                            </button>
+                        </div>
+                        {testResult && (
+                            <pre className="mt-3 p-3 bg-slate-900 text-emerald-400 rounded-lg text-[9px] max-h-48 overflow-y-auto font-mono border border-slate-800 leading-normal">
+                                {testResult}
+                            </pre>
+                        )}
                     </div>
                 </div>
             ) : (
