@@ -7,7 +7,12 @@ class ApiClient {
   private readonly CACHE_TTL = 30000; // 30 segundos
 
   private get token(): string | null {
-    return localStorage.getItem('portela_hub_token');
+    const t = localStorage.getItem('portela_hub_token');
+    if (t && t.startsWith('sb_secret_')) {
+      localStorage.removeItem('portela_hub_token');
+      return null;
+    }
+    return t;
   }
 
   private async request(path: string, options: RequestInit = {}) {
