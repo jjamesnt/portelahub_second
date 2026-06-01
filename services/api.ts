@@ -625,7 +625,6 @@ export const getNotificationLogs = async (eventId?: string): Promise<Notificatio
     }
 };
 
-// --- Apoiadores ---
 export const getApoiadores = async (): Promise<Apoiador[]> => {
     try {
         const response = await apiClient.post<any>('/api/admin/sql', {
@@ -643,6 +642,15 @@ export const getApoiadores = async (): Promise<Apoiador[]> => {
         const rows = response?.rows || [];
         return rows.map((r: any) => ({
             ...r,
+            id: r.id,
+            nome: r.nome,
+            cargo: r.cargo,
+            telefone: r.telefone,
+            endereco: r.endereco,
+            email: r.email,
+            fotoUrl: r.fotoUrl || r.foto_url,
+            createdAt: r.createdAt || r.created_at,
+            municipioId: r.municipioId || r.municipio_id,
             municipio: r.municipioNome ? { nome: r.municipioNome, regiao: r.municipioRegiao } : undefined
         })) as any[];
     } catch (error) {
