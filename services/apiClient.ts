@@ -15,6 +15,44 @@ class ApiClient {
     let url = `${API_URL}${cleanPath}`;
     let bodyObj = options.body ? JSON.parse(options.body as string) : null;
 
+    // Tradução de endpoints de usuários (/users) para a tabela pública /profiles do Supabase
+    if (cleanPath === '/users' && options.method === 'POST') {
+      url = `${API_URL}/profiles`;
+      const newUser = {
+        email: bodyObj?.email,
+        full_name: bodyObj?.nome || bodyObj?.full_name,
+        role: bodyObj?.role || 'user',
+        status: 'active'
+      };
+      options.body = JSON.stringify(newUser);
+    } else if (cleanPath === '/users') {
+      url = `${API_URL}/profiles?select=*`;
+    } else if (cleanPath.startsWith('/users/')) {
+      const parts = cleanPath.split('/');
+      const userId = parts[2];
+      const isStatusUpdate = parts[3] === 'status';
+
+      if (isStatusUpdate && options.method === 'PUT') {
+        url = `${API_URL}/profiles?id=eq.${userId}`;
+        options.method = 'PATCH';
+        options.body = JSON.stringify({ status: bodyObj?.status });
+      } else if (options.method === 'PUT' || options.method === 'PATCH') {
+        url = `${API_URL}/profiles?id=eq.${userId}`;
+        options.method = 'PATCH';
+        const updates: any = {};
+        if (bodyObj) {
+          if (bodyObj.nome) updates.full_name = bodyObj.nome;
+          if (bodyObj.full_name) updates.full_name = bodyObj.full_name;
+          if (bodyObj.role) updates.role = bodyObj.role;
+          if (bodyObj.permissions) updates.permissions = bodyObj.permissions;
+          if (bodyObj.status) updates.status = bodyObj.status;
+        }
+        options.body = JSON.stringify(updates);
+      } else if (options.method === 'GET') {
+        url = `${API_URL}/profiles?id=eq.${userId}`;
+      }
+    }
+
     // Se for rota de autenticação de login, usamos o Mock Auth de desenvolvimento bypass
     // Isso evita o erro de "Forbidden use of secret API key in browser" já que o Supabase Auth
     // bloqueia chaves service_role no navegador, mas o banco de dados/REST as aceita perfeitamente.
@@ -368,12 +406,17 @@ class ApiClient {
         };
       }
 
-      // Store in cache if it's a GET
-      if (options.method === 'GET') {
-        this.cache.set(path, { data, timestamp: Date.now() });
+      let returnData = data;
+      if (cleanPath.startsWith('/users/') && cleanPath !== '/users' && Array.isArray(data)) {
+        returnData = data[0] || null;
       }
 
-      return data;
+      // Store in cache if it's a GET
+      if (options.method === 'GET') {
+        this.cache.set(path, { data: returnData, timestamp: Date.now() });
+      }
+
+      return returnData;
     } catch (error: any) {
       clearTimeout(timeoutId);
       if (error.name === 'AbortError') {
