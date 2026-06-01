@@ -1,0 +1,12 @@
+# Portela Hub - Regras do Workspace
+
+## 🌐 BANCO DE DADOS (SUPABASE MCP)
+- Todo o acesso ao banco de dados pelo Agente AI deve ser realizado via MCP do Supabase (`supabase`).
+- O projeto oficial do Supabase para o Portela Hub é `hmbyicviwrrayhztzkch`.
+- Não deve ser feito nenhum acesso à antiga VPS (`69.62.103.45` ou `vps_james_sql`), a qual foi totalmente descontinuada e eliminada.
+
+## 🐘 POSTGRESQL NATIVO (VIA SUPABASE REST/RPC)
+- O backend e os serviços da aplicação utilizam a API Rest do Supabase e chamadas nativas de banco de dados.
+
+## 📁 ESCOPO
+- Estas regras são locais e aplicam-se estritamente ao workspace do Portela Hub (`Portelahub_SecondV`).

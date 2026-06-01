@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport" />
+    <meta name="description" content="Portela App - Sistema Centralizado de Gestão de Equipe, Apoiadores e Lideranças para Alê Portela e Lincoln Portela." />
+    <meta property="og:title" content="Portela App" />
+    <meta property="og:description" content="Gestão inteligente de equipe e bases políticas." />
+    <meta property="og:type" content="website" />
+    <title>Portela App</title>
+    <style>
+        .lider-icon-marker div,
+        .assessor-icon-marker div {
+            filter: none !important;
+        }
+
+        .leaflet-tooltip {
+            background: rgba(255, 255, 255, 0.8) !important;
+            backdrop-filter: blur(8px) !important;
+            border: 1px solid rgba(255, 255, 255, 0.2) !important;
+            border-radius: 8px !important;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+            padding: 4px 8px !important;
+        }
+
+        .dark .leaflet-tooltip {
+            background: rgba(15, 23, 42, 0.8) !important;
+            border-color: rgba(255, 255, 255, 0.1) !important;
+            color: white !important;
+        }
+
+        .leaflet-popup-content-wrapper {
+            background: rgba(255, 255, 255, 0.9) !important;
+            backdrop-filter: blur(12px) !important;
+            border-radius: 12px !important;
+            border: 1px solid rgba(255, 255, 255, 0.2) !important;
+        }
+
+        .dark .leaflet-popup-content-wrapper {
+            background: rgba(30, 41, 59, 0.9) !important;
+            border-color: rgba(255, 255, 255, 0.1) !important;
+            color: white !important;
+        }
+
+        .leaflet-popup-tip {
+            background: rgba(255, 255, 255, 0.9) !important;
+            backdrop-filter: blur(12px) !important;
+        }
+
+        .dark .leaflet-popup-tip {
+            background: rgba(30, 41, 59, 0.9) !important;
+        }
+    </style>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700;800&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "var(--color-primary)",
+                        "navy-dark": "var(--color-navy-dark)",
+                        "background-light": "#f5f8f8",
+                        "background-dark": "#0f2323",
+                        "turquoise": "var(--color-primary)"
+                    },
+                    fontFamily: {
+                        "display": ["Public Sans", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                    },
+                    height: {
+                        'screen-dynamic': '100dvh',
+                    }
+                },
+            },
+        }
+    </script>
+    <style type="text/tailwindcss">
+        :root {
+            --color-primary: #008B8B;
+            --color-navy-dark: #002147;
+        }
+
+        .mandato-lincoln {
+            --color-primary: #8db641;
+            --color-navy-dark: #0e1c2c;
+        }
+
+        body {
+            font-family: "Public Sans", sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            overflow-x: hidden;
+            width: 100%;
+            padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+        }
+        
+        #root {
+            min-height: 100dvh;
+            width: 100%;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        button, a {
+            touch-action: manipulation;
+        }
+
+        select {
+            appearance: none !important;
+            -webkit-appearance: none !important;
+            -moz-appearance: none !important;
+            background-image: none !important;
+        }
+
+        select::-ms-expand {
+            display: none !important;
+        }
+
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* Custom Global Scrollbars */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #e2e8f0;
+            border-radius: 20px;
+            border: 2px solid transparent;
+            background-clip: content-box;
+        }
+
+        .dark ::-webkit-scrollbar-thumb {
+            background: #334155;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--color-primary);
+            background-clip: content-box;
+        }
+
+        .px-safe-left {
+            padding-left: env(safe-area-inset-left);
+        }
+        .px-safe-right {
+            padding-right: env(safe-area-inset-right);
+        }
+        .pb-safe {
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+        .pt-safe {
+            padding-top: env(safe-area-inset-top);
+        }
+
+        .material-symbols-outlined {
+            font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+        }
+        .sidebar-active {
+            background-color: rgba(0, 139, 139, 0.2);
+            border-left: 4px solid var(--color-primary);
+        }
+        .mg-map-bg {
+            background-image: url(https://lh3.googleusercontent.com/aida-public/AB6AXuDMqFZcikANryCUTE0XJETMHJ15c2juG8_-RssYEFroh0pa_bfV8HBEfdnZm5Jd3zZkBWQqrljSuY_W4X4g4eAp6Z9OhJeLBTT9WHS6T0cLCpIIlB3zwAniM7yAVbkCl58syE2MTLB47tkABMBhu7ln46pagfemhImSLg0YXT11qWevvU1edbWhNmCE0DKmSvlmbCJ5U9Pe6rHz58DJsFRonYQd-oPx1bQ9zEFCFYZJ_0Y3ae01FCCWRhKPvsmXl8-JBQv3RS4ni1cu);
+            background-repeat: no-repeat;
+            background-position: center;
+            background-size: contain;
+        }
+
+        /* Prevents horizontal scroll on mobile */
+        html, body {
+            position: relative;
+            max-width: 100%;
+            overflow-x: hidden;
+        }
+
+        /* FullCalendar Hub Theme */
+        .fc-theme-hub .fc {
+            --fc-border-color: #e2e8f0;
+            --fc-button-bg-color: #ffffff;
+            --fc-button-border-color: #e2e8f0;
+            --fc-button-hover-bg-color: #f8fafc;
+            --fc-button-hover-border-color: #cbd5e1;
+            --fc-button-active-bg-color: #008B8B;
+            --fc-button-active-border-color: #008B8B;
+            --fc-today-bg-color: rgba(0, 139, 139, 0.05);
+            font-family: inherit;
+        }
+
+        .dark .fc-theme-hub .fc {
+            --fc-border-color: #334155;
+            --fc-button-bg-color: #1e293b;
+            --fc-button-border-color: #334155;
+            --fc-button-hover-bg-color: #334155;
+            --fc-today-bg-color: rgba(0, 139, 139, 0.1);
+        }
+
+        .fc-theme-hub .fc-toolbar-title {
+            font-size: 1.1rem !important;
+            font-weight: 800 !important;
+            color: #002147;
+            text-transform: capitalize;
+        }
+
+        .dark .fc-theme-hub .fc-toolbar-title {
+            color: #f8fafc;
+        }
+
+        .fc-theme-hub .fc-button {
+            font-weight: 700 !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.025em !important;
+            font-size: 0.65rem !important;
+            padding: 0.4rem 0.8rem !important;
+            border-radius: 0.75rem !important;
+            background: white !important;
+            color: #64748b !important;
+            border: 1px solid #e2e8f0 !important;
+        }
+
+        .dark .fc-theme-hub .fc-button {
+            background: #1e293b !important;
+            border-color: #334155 !important;
+            color: #94a3b8 !important;
+        }
+
+        .fc-theme-hub .fc-button-primary:not(:disabled).fc-button-active {
+            background-color: #008B8B !important;
+            border-color: #008B8B !important;
+            color: white !important;
+        }
+
+        .fc-theme-hub .fc-col-header-cell-cushion {
+            font-weight: 800 !important;
+            font-size: 0.65rem !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.1em !important;
+            color: #94a3b8;
+            padding: 12px 0 !important;
+        }
+
+        .fc-theme-hub .fc-daygrid-day-number {
+            font-weight: 800 !important;
+            font-size: 0.7rem !important;
+            color: #64748b;
+            padding: 8px !important;
+        }
+
+        .fc-theme-hub .fc-event {
+            border-radius: 6px !important;
+            border: none !important;
+            padding: 1px 4px !important;
+            font-weight: 700 !important;
+            font-size: 0.65rem !important;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .fc-theme-hub .fc-day-today {
+            background-color: var(--fc-today-bg-color) !important;
+        }
+
+        .fc-theme-hub .fc-day-today .fc-daygrid-day-number {
+            background-color: #008B8B;
+            color: white !important;
+            border-radius: 8px;
+            margin: 4px;
+            width: 24px;
+            height: 24px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 !important;
+        }
+
+        .fc-theme-hub .fc-list-day-cushion {
+            background-color: #f8fafc !important;
+        }
+        .dark .fc-theme-hub .fc-list-day-cushion {
+            background-color: #0f172a !important;
+        }
+
+        /* Responsive Mobile Tweak */
+        @media (max-width: 768px) {
+            .fc-toolbar {
+                flex-direction: column;
+                gap: 10px;
+            }
+            .fc-toolbar-chunk {
+                display: flex;
+                justify-content: center;
+                width: 100%;
+            }
+        }
+    </style>
+
+</head>
+
+<body
+    class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-display transition-colors duration-300">
+    <div id="root">
+        <div
+            style="display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #f5f8f8; color: #008B8B; font-family: sans-serif;">
+            Carregando sistema...
+        </div>
+    </div>
+    <script type="module" src="/index.tsx"></script>
+</body>
+
+</html>
