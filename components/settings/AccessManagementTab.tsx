@@ -95,6 +95,7 @@ export const AccessManagementTab: React.FC<AccessManagementTabProps> = ({
                     <div className="pt-4 border-t border-slate-200/50 dark:border-slate-800/50 max-w-md mx-auto space-y-2 text-left font-mono text-[10px] text-slate-400">
                         <p className="font-bold text-[11px] text-slate-500 mb-2 uppercase tracking-wide">🔍 Diagnóstico de Conexão:</p>
                         <p>• URL API: <span className="text-blue-500">{import.meta.env.VITE_SUPABASE_URL || 'Não configurada'}</span></p>
+                        <p>• Chave Anon (Vite): <span className="text-blue-500">{import.meta.env.VITE_SUPABASE_ANON_KEY ? `${import.meta.env.VITE_SUPABASE_ANON_KEY.substring(0, 12)}... (len: ${import.meta.env.VITE_SUPABASE_ANON_KEY.length})` : 'Não configurada'}</span></p>
                         <p>• Token Salvo: <span className="text-blue-500">{localStorage.getItem('portela_hub_token') ? 'Ativo (Salvo no Navegador)' : 'Nenhum'}</span></p>
                         <p>• E-mail Conectado: <span className="text-blue-500">{localStorage.getItem('portela_hub_email') || 'Nenhum'}</span></p>
                     </div>
