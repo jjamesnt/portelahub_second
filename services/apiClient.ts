@@ -58,42 +58,8 @@ class ApiClient {
       }
     }
 
-    // Se for rota de autenticação de login, usamos o Mock Auth de desenvolvimento bypass
-    // Isso evita o erro de "Forbidden use of secret API key in browser" já que o Supabase Auth
-    // bloqueia chaves service_role no navegador, mas o banco de dados/REST as aceita perfeitamente.
     if (cleanPath === '/auth/login') {
-      const email = bodyObj?.email || '';
-      console.log(`[Mock Auth Bypass] Logando usuário de desenvolvimento: ${email}`);
-      
-      // Mapear os usuários conhecidos e seus perfis cadastrados no Supabase
-      let userProfile = {
-        id: 'aa15110c-de1e-49dd-a251-5c2722e56583',
-        email: email,
-        full_name: 'James M. Rizo',
-        role: 'master'
-      };
-      
-      if (email.includes('ale')) {
-        userProfile = {
-          id: '408a74cd-c4ec-4bc6-9335-cfc6137c7e51',
-          email: email,
-          full_name: 'Alê Portela',
-          role: 'admin'
-        };
-      } else if (email.includes('userbase')) {
-        userProfile = {
-          id: 'ae3a0ac8-9aa8-4e75-bfb3-f926c18e98dd',
-          email: email,
-          full_name: 'User Base',
-          role: 'user'
-        };
-      }
-      
-      localStorage.setItem('portela_hub_email', email);
-      return {
-        token: SUPABASE_ANON_KEY, // Passará a usar o service_role key em todas as requisições subsequentes do cabeçalho
-        user: userProfile
-      };
+      url = `${SUPABASE_URL}/auth/v1/token?grant_type=password`;
     } else if (cleanPath === '/auth/signup') {
       url = `${SUPABASE_URL}/auth/v1/signup`;
       if (bodyObj) {
@@ -110,33 +76,7 @@ class ApiClient {
         options.body = JSON.stringify(bodyObj);
       }
     } else if (cleanPath === '/auth/me') {
-      // Como o login é simulado localmente, retornamos o perfil do localStorage ou do token administrativo
-      console.log('[Mock Auth Bypass] Carregando perfil do usuário ativo...');
-      const activeEmail = localStorage.getItem('portela_hub_email') || 'james.rizo@portelahub.com';
-      
-      try {
-        const profileRes = await fetch(`${API_URL}/profiles?email=eq.${activeEmail}`, {
-          headers: {
-            'apikey': SUPABASE_ANON_KEY
-          }
-        });
-        if (profileRes.ok) {
-          const profiles = await profileRes.json();
-          if (profiles && profiles[0]) {
-            return profiles[0];
-          }
-        }
-      } catch (e) {
-        console.error('Erro ao recuperar perfil complementar:', e);
-      }
-      
-      return {
-        id: 'aa15110c-de1e-49dd-a251-5c2722e56583',
-        email: activeEmail,
-        full_name: activeEmail.includes('ale') ? 'Alê Portela' : 'James M. Rizo',
-        role: activeEmail.includes('ale') ? 'admin' : 'master',
-        status: 'active'
-      };
+      url = `${SUPABASE_URL}/auth/v1/user`;
     } else if (cleanPath === '/admin/sql' && bodyObj && bodyObj.sql) {
       const sql = bodyObj.sql.toLowerCase();
       console.log('[SQL Interceptor] Traduzindo query SQL para PostgREST Supabase:', bodyObj.sql);
