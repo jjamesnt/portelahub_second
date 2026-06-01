@@ -5,9 +5,11 @@ import { Profile } from '../types';
 export const useSettingsProfiles = () => {
     const [profiles, setProfiles] = useState<Profile[]>([]);
     const [loadingProfiles, setLoadingProfiles] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     const loadProfiles = useCallback(async () => {
         setLoadingProfiles(true);
+        setError(null);
         try {
             const response: any = await profileService.getProfiles();
             const rawList = response.users || response.profiles || response.data || (Array.isArray(response) ? response : []);
@@ -18,8 +20,9 @@ export const useSettingsProfiles = () => {
             }));
             
             setProfiles(flattenedList);
-        } catch (err) {
+        } catch (err: any) {
             console.error('Erro ao carregar perfis:', err);
+            setError(err.message || String(err));
         } finally {
             setLoadingProfiles(false);
         }
@@ -58,6 +61,7 @@ export const useSettingsProfiles = () => {
     return {
         profiles,
         loadingProfiles,
+        error,
         loadProfiles,
         handleUpdateStatus,
         handleUpdateRole,

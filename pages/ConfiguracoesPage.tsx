@@ -16,7 +16,7 @@ const ConfiguracoesPage: React.FC<ConfiguracoesPageProps> = ({ navigateTo }) => 
         theme, toggleTheme, profile, signOut, impersonateUser
     } = useAppContext();
     const { 
-        profiles, loadingProfiles, loadProfiles, 
+        profiles, loadingProfiles, error, loadProfiles, 
         handleUpdateStatus, handleUpdateRole, handleUpdatePermissions
     } = useSettingsProfiles();
     const {
@@ -47,6 +47,7 @@ const ConfiguracoesPage: React.FC<ConfiguracoesPageProps> = ({ navigateTo }) => 
                     <AccessManagementTab 
                         profiles={profiles}
                         loadingProfiles={loadingProfiles}
+                        loadError={error}
                         loadProfiles={loadProfiles}
                         isMaster={isMaster}
                         profile={profile}

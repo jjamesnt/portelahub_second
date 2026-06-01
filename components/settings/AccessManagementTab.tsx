@@ -8,6 +8,7 @@ import SuccessModal from '../SuccessModal';
 interface AccessManagementTabProps {
     profiles: Profile[];
     loadingProfiles: boolean;
+    loadError?: string | null;
     loadProfiles: () => Promise<void>;
     isMaster: boolean;
     profile: Profile | null;
@@ -24,6 +25,7 @@ interface AccessManagementTabProps {
 export const AccessManagementTab: React.FC<AccessManagementTabProps> = ({
     profiles,
     loadingProfiles,
+    loadError,
     loadProfiles,
     isMaster,
     profile,
@@ -67,8 +69,36 @@ export const AccessManagementTab: React.FC<AccessManagementTabProps> = ({
                 </button>
             </div>
 
+            {loadError && (
+                <div className="p-4 bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 border border-rose-100 dark:border-rose-900/30 rounded-2xl text-xs font-bold flex items-start gap-3 animate-in fade-in duration-300">
+                    <span className="material-symbols-outlined text-base mt-0.5">error</span>
+                    <div className="flex-1">
+                        <strong className="block mb-1">Falha ao buscar usuários do Supabase:</strong>
+                        <p className="font-mono">{loadError}</p>
+                    </div>
+                </div>
+            )}
+
             {loadingProfiles ? (
                 <div className="py-12 flex justify-center"><Loader /></div>
+            ) : profiles.length === 0 ? (
+                <div className="p-8 text-center bg-slate-50 dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800 space-y-4 animate-in fade-in duration-300">
+                    <div className="inline-flex size-14 bg-amber-500/10 text-amber-500 rounded-2xl items-center justify-center">
+                        <span className="material-symbols-outlined text-3xl">warning</span>
+                    </div>
+                    <div>
+                        <h4 className="text-sm font-black text-navy-dark dark:text-white uppercase tracking-wider">Nenhum Usuário Carregado</h4>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-md mx-auto">
+                            A consulta retornou 0 registros da tabela <code>public.profiles</code> no Supabase.
+                        </p>
+                    </div>
+                    <div className="pt-4 border-t border-slate-200/50 dark:border-slate-800/50 max-w-md mx-auto space-y-2 text-left font-mono text-[10px] text-slate-400">
+                        <p className="font-bold text-[11px] text-slate-500 mb-2 uppercase tracking-wide">🔍 Diagnóstico de Conexão:</p>
+                        <p>• URL API: <span className="text-blue-500">{import.meta.env.VITE_SUPABASE_URL || 'Não configurada'}</span></p>
+                        <p>• Token Salvo: <span className="text-blue-500">{localStorage.getItem('portela_hub_token') ? 'Ativo (Salvo no Navegador)' : 'Nenhum'}</span></p>
+                        <p>• E-mail Conectado: <span className="text-blue-500">{localStorage.getItem('portela_hub_email') || 'Nenhum'}</span></p>
+                    </div>
+                </div>
             ) : (
                 <div className="overflow-x-auto -mx-5 md:mx-0">
                     <table className="w-full text-left">
