@@ -296,10 +296,17 @@ class ApiClient {
       ...options.headers,
     } as any;
 
-    if (this.token && !this.token.startsWith('sb_secret_')) {
-      headers['Authorization'] = `Bearer ${this.token}`;
-    } else if (!SUPABASE_ANON_KEY.startsWith('sb_secret_')) {
-      headers['Authorization'] = `Bearer ${SUPABASE_ANON_KEY}`;
+    const currentToken = this.token || SUPABASE_ANON_KEY;
+    if (currentToken) {
+      if (cleanPath.startsWith('/auth/')) {
+        // Evita enviar service_role para endpoints do Auth (GoTrue) para não causar erros de "Forbidden"
+        if (!currentToken.startsWith('sb_secret_')) {
+          headers['Authorization'] = `Bearer ${currentToken}`;
+        }
+      } else {
+        // Para qualquer outro endpoint do PostgREST, enviamos a chave para autenticação/bypass de RLS
+        headers['Authorization'] = `Bearer ${currentToken}`;
+      }
     }
 
     const controller = new AbortController();
@@ -315,8 +322,9 @@ class ApiClient {
       clearTimeout(timeoutId);
 
       if (response.status === 401 && cleanPath !== '/auth/login') {
-        localStorage.removeItem('portela_hub_token');
-        window.location.href = '/login';
+        console.error('[DEBUG 401] Ocorreu um erro 401 não autorizado para a rota:', cleanPath);
+        // localStorage.removeItem('portela_hub_token');
+        // window.location.href = '/login';
         throw new Error('Não autorizado');
       }
 
