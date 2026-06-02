@@ -102,14 +102,15 @@ export async function getDashboardAssessores(): Promise<Assessor[]> {
 // --- Municípios ---
 export const getMunicipios = async (): Promise<MunicipioDetalhado[]> => {
     try {
-        const data = await apiClient.get<any>('/api/municipios?include=recursos,demandas,apoiadores');
-        const list = Array.isArray(data) ? data : (data.municipios || []);
+        const data = await apiClient.get<any>('/municipios?select=*,recursos(valor),demandas(id),apoiadores(id,nome,cargo)');
+        const list = Array.isArray(data) ? data : [];
 
         return list.map((m: any) => ({
             ...mapMunicipio(m),
             totalRecursos: m.recursos?.reduce((acc: number, r: any) => acc + (parseFloat(r.valor) || 0), 0) || 0,
-            totalDemandas: m.demandas_count || 0,
-            totalApoiadores: m.apoiadores_count || 0
+            totalDemandas: m.demandas?.length || 0,
+            totalApoiadores: m.apoiadores?.length || 0,
+            apoiadores: m.apoiadores || []
         })) as any[];
     } catch (error) {
         console.error('Erro ao buscar municípios:', error);
@@ -139,16 +140,24 @@ export const updateMunicipio = async (id: string, updates: any): Promise<any> =>
 
 export const getMunicipioById = async (id: string): Promise<MunicipioDetalhado | undefined> => {
     try {
-        const municipio = await apiClient.get<any>(`/api/municipios/${id}?include=demandas,liderancas,recursos`);
+        const [municipio, allLiderancas] = await Promise.all([
+            apiClient.get<any>(`/api/municipios/${id}?include=demandas,recursos`),
+            getLiderancas().catch(() => [])
+        ]);
+        
+        const munNome = municipio.nome;
+        const filteredLiderancas = allLiderancas.filter(l => 
+            l.municipio && l.municipio.toLowerCase().trim() === munNome.toLowerCase().trim()
+        );
         
         return {
             ...mapMunicipio(municipio),
             demandas: (municipio.demandas || []) as Demanda[],
-            liderancas: (municipio.liderancas_locais || []).map((l: any) => ({
+            liderancas: filteredLiderancas.map((l: any) => ({
                 nome: l.nome,
-                partido: l.partido,
-                cargo: l.cargo,
-                avatarInitials: l.avatar_initials
+                partido: l.partido || 'Sem Partido',
+                cargo: l.cargo || 'Liderança Comunitária',
+                avatarInitials: l.nome.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()
             })) as LiderancaLocal[],
             totalRecursos: municipio.recursos?.reduce((acc: number, r: any) => acc + (parseFloat(r.valor) || 0), 0) || 0
         } as MunicipioDetalhado;
@@ -633,9 +642,22 @@ export const getApoiadores = async (): Promise<Apoiador[]> => {
                     a.id, a.nome, a.cargo, a.telefone, a.endereco, a.email, a.foto_url as "fotoUrl", a.created_at as "createdAt",
                     a.municipio_id as "municipioId",
                     m.nome as "municipioNome",
-                    m.regiao as "municipioRegiao"
+                    m.regiao as "municipioRegiao",
+                    m.status_prefeito as "statusPrefeito",
+                    m.votacao_ale as "votacaoAle",
+                    m.votacao_lincoln as "votacaoLincoln",
+                    m.idene,
+                    m.lincoln_fechado as "lincolnFechado",
+                    m.status_atendimento as "statusAtendimento",
+                    m.tipo_atendimento as "tipoAtendimento",
+                    m.principal_demanda as "principalDemanda",
+                    m.sugestao_sedese as "sugestaoSedese",
+                    m.observacao,
+                    m.assessor_id as "assessorId",
+                    ass.nome as "assessorNome"
                 FROM hub.apoiadores a
                 LEFT JOIN hub.municipios m ON a.municipio_id = m.id
+                LEFT JOIN hub.assessores ass ON m.assessor_id = ass.id
             `
         });
         
@@ -651,7 +673,34 @@ export const getApoiadores = async (): Promise<Apoiador[]> => {
             fotoUrl: r.fotoUrl || r.foto_url,
             createdAt: r.createdAt || r.created_at,
             municipioId: r.municipioId || r.municipio_id,
-            municipio: r.municipioNome ? { nome: r.municipioNome, regiao: r.municipioRegiao } : undefined
+            statusPrefeito: r.statusPrefeito || r.status_prefeito,
+            votacaoAle: r.votacaoAle || r.votacao_ale,
+            votacaoLincoln: r.votacaoLincoln || r.votacao_lincoln,
+            idene: r.idene,
+            lincolnFechado: r.lincolnFechado || r.lincoln_fechado,
+            statusAtendimento: r.statusAtendimento || r.status_atendimento,
+            tipoAtendimento: r.tipoAtendimento || r.tipo_atendimento,
+            principalDemanda: r.principalDemanda || r.principal_demanda,
+            sugestaoSedese: r.sugestaoSedese || r.sugestao_sedese,
+            observacao: r.observacao,
+            assessorResp: r.assessorNome || r.assessor_nome,
+            municipio: r.municipioNome ? { 
+                id: r.municipioId || r.municipio_id,
+                nome: r.municipioNome, 
+                regiao: r.municipioRegiao,
+                statusPrefeito: r.statusPrefeito,
+                votacaoAle: r.votacaoAle,
+                votacaoLincoln: r.votacaoLincoln,
+                idene: r.idene,
+                lincolnFechado: r.lincolnFechado,
+                statusAtendimento: r.statusAtendimento,
+                tipoAtendimento: r.tipoAtendimento,
+                principalDemanda: r.principalDemanda,
+                sugestaoSedese: r.sugestaoSedese,
+                observacao: r.observacao,
+                assessorId: r.assessorId,
+            } : undefined,
+            assessor: r.assessorNome ? { nome: r.assessorNome, id: r.assessorId } : undefined,
         })) as any[];
     } catch (error) {
         console.error('Erro ao buscar apoiadores via SQL:', error);
@@ -750,15 +799,29 @@ const deepNormalize = (s: string) => {
         .normalize('NFD')
         .replace(/[\u0300-\u036f]/g, "") // Remove acentos
         .replace(/\./g, '')
+        .replace(/\?/g, '') // Remove pontos de interrogação
         .replace(/\s+/g, ' ')
         .trim();
 };
 
 export const syncSpreadsheetData = async (csvUrl: string): Promise<{ success: number, errors: number }> => {
-    console.log('[Sync] Iniciando sincronização via CSV:', csvUrl);
+    let targetUrl = csvUrl.trim();
+    if (targetUrl.includes('docs.google.com/spreadsheets/d/') && !targetUrl.includes('/d/e/') && !targetUrl.includes('/pub')) {
+        console.log('[Sync] Link do Google Sheets detectado. Convertendo para exportação CSV...');
+        const match = targetUrl.match(/\/d\/([a-zA-Z0-9-_]+)/);
+        if (match && match[1]) {
+            const docId = match[1];
+            const gidMatch = targetUrl.match(/gid=([0-9]+)/);
+            const gid = gidMatch ? gidMatch[1] : '0';
+            targetUrl = `https://docs.google.com/spreadsheets/d/${docId}/export?format=csv&gid=${gid}`;
+            console.log('[Sync] Link convertido com sucesso para:', targetUrl);
+        }
+    }
+
+    console.log('[Sync] Iniciando sincronização via CSV:', targetUrl);
     
     try {
-        const response = await fetch(csvUrl);
+        const response = await fetch(targetUrl);
         if (!response.ok) throw new Error('Não foi possível carregar a planilha. Verifique se o link está correto e publicado como CSV.');
         
         const csvText = await response.text();
@@ -767,7 +830,7 @@ export const syncSpreadsheetData = async (csvUrl: string): Promise<{ success: nu
         // 1. Mapear assessores para IDs
         const assessores = await getAssessores();
         const assessorMap: Record<string, string> = {};
-        assessores.forEach(a => assessorMap[a.nome.toLowerCase().trim()] = a.id);
+        assessores.forEach(a => assessorMap[deepNormalize(a.nome)] = a.id);
 
         // 2. Mapear Municípios existentes
         const allMunicipios = await apiClient.get<any[]>('/api/municipios');
@@ -884,6 +947,11 @@ export const syncSpreadsheetData = async (csvUrl: string): Promise<{ success: nu
                 municipio_id: mun.id,
                 nome: nomeSemCargo,
                 cargo: cargoDetectado || getCol("Cargo") || '',
+                status_prefeito: getCol("Status do Prefeito"),
+                votacao_ale: parseNum(getCol("Votação Alê")),
+                votacao_lincoln: parseNum(getCol("Votação Lincoln")),
+                principal_demanda: getCol("Principal Demanda"),
+                sugestao_sedese: getCol("Sugestão de Programa SEDESE")
             });
         }
 
@@ -904,21 +972,29 @@ function parseCSV(text: string) {
     const lines = text.split(/\r?\n/);
     if (lines.length === 0) return [];
     
-    const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+    // Detecção dinâmica de delimitador (Excel em PT-BR costuma exportar com ponto e vírgula ';')
+    const firstLine = lines[0];
+    let delimiter = ',';
+    if (firstLine.includes(';')) {
+        delimiter = ';';
+    } else if (firstLine.includes('\t')) {
+        delimiter = '\t';
+    }
+    
+    const headers = firstLine.split(delimiter).map(h => h.trim().replace(/^"|"$/g, ''));
     const results = [];
     
     for (let i = 1; i < lines.length; i++) {
         const line = lines[i].trim();
         if (!line) continue;
         
-        // Regex simplificado para colunas separadas por vírgula, lidando com aspas
         const values = [];
         let start = 0;
         let inQuotes = false;
         
         for (let j = 0; j < line.length; j++) {
             if (line[j] === '"') inQuotes = !inQuotes;
-            if (line[j] === ',' && !inQuotes) {
+            if (line[j] === delimiter && !inQuotes) {
                 values.push(line.substring(start, j).trim().replace(/^"|"$/g, ''));
                 start = j + 1;
             }
@@ -946,3 +1022,355 @@ export function isSim(val: any) {
     const s = val.toString().toLowerCase();
     return s === 'sim' || s === 's' || s === 'true' || s === '1';
 }
+
+export const syncLiderancasSpreadsheet = async (csvUrl: string): Promise<{ success: number, errors: number }> => {
+    let targetUrl = csvUrl.trim();
+    if (targetUrl.includes('docs.google.com/spreadsheets/d/') && !targetUrl.includes('/d/e/') && !targetUrl.includes('/pub')) {
+        console.log('[Sync Lideranças] Link detectado. Convertendo para exportação CSV...');
+        const match = targetUrl.match(/\/d\/([a-zA-Z0-9-_]+)/);
+        if (match && match[1]) {
+            const docId = match[1];
+            const gidMatch = targetUrl.match(/gid=([0-9]+)/);
+            const gid = gidMatch ? gidMatch[1] : '0';
+            targetUrl = `https://docs.google.com/spreadsheets/d/${docId}/export?format=csv&gid=${gid}`;
+        }
+    }
+
+    console.log('[Sync Lideranças] Buscando planilha:', targetUrl);
+    const response = await fetch(targetUrl);
+    if (!response.ok) throw new Error('Não foi possível carregar a planilha. Verifique o link e se está publicada como CSV.');
+    const csvText = await response.text();
+    const rows = parseCSV(csvText);
+
+    // Mapear lideranças existentes para evitar duplicidade
+    const existing = await getLiderancas();
+    const existingMap: Record<string, string> = {};
+    existing.forEach(l => {
+        existingMap[l.nome.toLowerCase().trim()] = l.id;
+    });
+
+    const normalize = deepNormalize;
+    const updates: any[] = [];
+    let errors = 0;
+
+    for (const row of rows) {
+        const getCol = (name: string) => {
+            const normName = normalize(name);
+            const key = Object.keys(row).find(k => normalize(k) === normName);
+            return key ? row[key] : null;
+        };
+
+        const nome = getCol("Nome") || getCol("Nome liderança") || getCol("Nome apoiador");
+        if (!nome) {
+            errors++;
+            continue;
+        }
+
+        const municipio = getCol("Cidade") || getCol("Municipio") || '';
+        const partido = getCol("Partido") || '';
+        const cargo = getCol("Cargo") || 'Liderança Comunitária';
+        const contato = getCol("Contato") || getCol("Telefone") || '';
+        const email = getCol("Email") || '';
+        const status = getCol("Status") || 'Ativo';
+        const origem = getCol("Origem") || 'Alê Portela';
+        const regiao = getCol("Região") || '';
+
+        const existingId = existingMap[nome.toLowerCase().trim()];
+
+        updates.push({
+            ...(existingId ? { id: existingId } : {}),
+            nome,
+            municipio, // Mapeia para o campo correto municipio
+            partido,
+            cargo,
+            contato, // Mapeia para contato
+            email,
+            status,
+            origem,
+            regiao
+        });
+    }
+
+    console.log(`[Sync Lideranças] Processando ${updates.length} lideranças...`);
+    for (const item of updates) {
+        try {
+            await upsertLideranca(item);
+        } catch (e) {
+            console.error(`Erro ao salvar liderança ${item.nome}:`, e);
+            errors++;
+        }
+    }
+
+    return { success: updates.length - errors, errors };
+};
+
+export const syncAssessoresSpreadsheet = async (csvUrl: string): Promise<{ success: number, errors: number }> => {
+    let targetUrl = csvUrl.trim();
+    if (targetUrl.includes('docs.google.com/spreadsheets/d/') && !targetUrl.includes('/d/e/') && !targetUrl.includes('/pub')) {
+        console.log('[Sync Assessores] Link detectado. Convertendo para exportação CSV...');
+        const match = targetUrl.match(/\/d\/([a-zA-Z0-9-_]+)/);
+        if (match && match[1]) {
+            const docId = match[1];
+            const gidMatch = targetUrl.match(/gid=([0-9]+)/);
+            const gid = gidMatch ? gidMatch[1] : '0';
+            targetUrl = `https://docs.google.com/spreadsheets/d/${docId}/export?format=csv&gid=${gid}`;
+        }
+    }
+
+    console.log('[Sync Assessores] Buscando planilha:', targetUrl);
+    const response = await fetch(targetUrl);
+    if (!response.ok) throw new Error('Não foi possível carregar a planilha. Verifique o link e se está publicada como CSV.');
+    const csvText = await response.text();
+    const rows = parseCSV(csvText);
+
+    // Mapear assessores existentes para evitar duplicidade
+    const existing = await getAssessores();
+    const existingMap: Record<string, string> = {};
+    existing.forEach(a => {
+        existingMap[a.nome.toLowerCase().trim()] = a.id;
+    });
+
+    const normalize = deepNormalize;
+    const updates: any[] = [];
+    let errors = 0;
+
+    for (const row of rows) {
+        const getCol = (name: string) => {
+            const normName = normalize(name);
+            const key = Object.keys(row).find(k => normalize(k) === normName);
+            return key ? row[key] : null;
+        };
+
+        const nome = getCol("Nome") || getCol("Nome assessor");
+        if (!nome) {
+            errors++;
+            continue;
+        }
+
+        const email = getCol("Email") || '';
+        const telefone = getCol("Telefone") || getCol("Contato") || '';
+        const regiaoAtuacao = getCol("Região de Atuação") || getCol("Regiao de Atuacao") || getCol("Região") || '';
+        const cargo = getCol("Cargo") || 'Assessor Regional';
+        const origem = getCol("Origem") || 'Alê Portela';
+
+        const existingId = existingMap[nome.toLowerCase().trim()];
+
+        updates.push({
+            ...(existingId ? { id: existingId } : {}),
+            nome,
+            email,
+            telefone,
+            regiaoAtuacao,
+            cargo,
+            origem,
+            avatarUrl: 'https://via.placeholder.com/150'
+        });
+    }
+
+    console.log(`[Sync Assessores] Processando ${updates.length} assessores...`);
+    for (const item of updates) {
+        try {
+            await upsertAssessor(item);
+        } catch (e) {
+            console.error(`Erro ao salvar assessor ${item.nome}:`, e);
+            errors++;
+        }
+    }
+
+    return { success: updates.length - errors, errors };
+};
+
+export const syncRecursosSpreadsheet = async (csvUrl: string): Promise<{ success: number, errors: number }> => {
+    let targetUrl = csvUrl.trim();
+    if (targetUrl.includes('docs.google.com/spreadsheets/d/') && !targetUrl.includes('/d/e/') && !targetUrl.includes('/pub')) {
+        console.log('[Sync Recursos] Link detectado. Convertendo para exportação CSV...');
+        const match = targetUrl.match(/\/d\/([a-zA-Z0-9-_]+)/);
+        if (match && match[1]) {
+            const docId = match[1];
+            const gidMatch = targetUrl.match(/gid=([0-9]+)/);
+            const gid = gidMatch ? gidMatch[1] : '0';
+            targetUrl = `https://docs.google.com/spreadsheets/d/${docId}/export?format=csv&gid=${gid}`;
+        }
+    }
+
+    console.log('[Sync Recursos] Buscando planilha:', targetUrl);
+    const response = await fetch(targetUrl);
+    if (!response.ok) throw new Error('Não foi possível carregar a planilha. Verifique o link e se está publicada como CSV.');
+    const csvText = await response.text();
+    const rows = parseCSV(csvText);
+
+    // Mapear Municípios existentes para buscar por cidade
+    const allMunicipios = await apiClient.get<any[]>('/api/municipios');
+    const municipioMap: Record<string, string> = {};
+    allMunicipios.forEach(m => {
+        municipioMap[deepNormalize(m.nome)] = m.id;
+    });
+
+    // Mapear recursos existentes para evitar duplicações
+    // Chave única: municipioId_descricao_valor
+    const allRecursos = await getAllRecursos();
+    const existingRecursosMap = new Set<string>();
+    allRecursos.forEach(r => {
+        const key = `${r.municipioId}_${r.descricao.toLowerCase().trim()}_${r.valor}`;
+        existingRecursosMap.add(key);
+    });
+
+    const normalize = deepNormalize;
+    let successCount = 0;
+    let errors = 0;
+
+    for (const row of rows) {
+        const getCol = (name: string) => {
+            const normName = normalize(name);
+            const key = Object.keys(row).find(k => normalize(k) === normName);
+            return key ? row[key] : null;
+        };
+
+        const cidade = getCol("Cidade") || getCol("Municipio");
+        const descricao = getCol("Descrição") || getCol("Descricao");
+        if (!cidade || !descricao) {
+            errors++;
+            continue;
+        }
+
+        const municipioId = municipioMap[normalize(cidade)];
+        if (!municipioId) {
+            errors++;
+            continue;
+        }
+
+        const tipo = getCol("Tipo") || 'Emenda';
+        const valor = parseNum(getCol("Valor"));
+        const origem = getCol("Origem") || 'Alê Portela';
+        const status = getCol("Status") || 'Aprovado';
+        const responsavel = getCol("Responsável") || getCol("Responsavel") || '';
+        const observacoes = getCol("Observações") || getCol("Observacoes") || '';
+        const dataAprovacaoRaw = getCol("Data de Aprovação") || getCol("Data de Aprovacao") || getCol("Data") || '';
+
+        let dataAprovacao = new Date().toISOString();
+        if (dataAprovacaoRaw) {
+            try {
+                const parsedDate = new Date(dataAprovacaoRaw);
+                if (!isNaN(parsedDate.getTime())) {
+                    dataAprovacao = parsedDate.toISOString();
+                }
+            } catch (e) {}
+        }
+
+        const uniqueKey = `${municipioId}_${descricao.toLowerCase().trim()}_${valor}`;
+        if (existingRecursosMap.has(uniqueKey)) {
+            continue; // Já importado anteriormente, pular
+        }
+
+        try {
+            await createRecurso({
+                municipio_id: municipioId,
+                tipo,
+                descricao,
+                valor,
+                origem,
+                status,
+                responsavel,
+                observacoes,
+                data_aprovacao: dataAprovacao
+            });
+            successCount++;
+            existingRecursosMap.add(uniqueKey); // Adiciona ao cache local da rodada
+        } catch (e) {
+            console.error(`Erro ao criar recurso:`, e);
+            errors++;
+        }
+    }
+
+    return { success: successCount, errors };
+};
+
+export const syncDemandasSpreadsheet = async (csvUrl: string): Promise<{ success: number, errors: number }> => {
+    let targetUrl = csvUrl.trim();
+    if (targetUrl.includes('docs.google.com/spreadsheets/d/') && !targetUrl.includes('/d/e/') && !targetUrl.includes('/pub')) {
+        console.log('[Sync Demandas] Link detectado. Convertendo para exportação CSV...');
+        const match = targetUrl.match(/\/d\/([a-zA-Z0-9-_]+)/);
+        if (match && match[1]) {
+            const docId = match[1];
+            const gidMatch = targetUrl.match(/gid=([0-9]+)/);
+            const gid = gidMatch ? gidMatch[1] : '0';
+            targetUrl = `https://docs.google.com/spreadsheets/d/${docId}/export?format=csv&gid=${gid}`;
+        }
+    }
+
+    console.log('[Sync Demandas] Buscando planilha:', targetUrl);
+    const response = await fetch(targetUrl);
+    if (!response.ok) throw new Error('Não foi possível carregar a planilha. Verifique o link e se está publicada como CSV.');
+    const csvText = await response.text();
+    const rows = parseCSV(csvText);
+
+    // Mapear Municípios existentes para buscar por cidade
+    const allMunicipios = await apiClient.get<any[]>('/api/municipios');
+    const municipioMap: Record<string, string> = {};
+    allMunicipios.forEach(m => {
+        municipioMap[deepNormalize(m.nome)] = m.id;
+    });
+
+    // Mapear demandas existentes para evitar duplicações
+    // Chave única: municipioId_titulo_origem
+    const allDemandas = await getAllDemandas();
+    const existingDemandasMap = new Set<string>();
+    allDemandas.forEach(d => {
+        const key = `${d.municipioId}_${(d.titulo || '').toLowerCase().trim()}_${d.origem}`;
+        existingDemandasMap.add(key);
+    });
+
+    const normalize = deepNormalize;
+    let successCount = 0;
+    let errors = 0;
+
+    for (const row of rows) {
+        const getCol = (name: string) => {
+            const normName = normalize(name);
+            const key = Object.keys(row).find(k => normalize(k) === normName);
+            return key ? row[key] : null;
+        };
+
+        const cidade = getCol("Cidade") || getCol("Municipio");
+        const titulo = getCol("Título") || getCol("Titulo") || getCol("Descrição") || getCol("Descricao");
+        if (!cidade || !titulo) {
+            errors++;
+            continue;
+        }
+
+        const municipioId = municipioMap[normalize(cidade)];
+        if (!municipioId) {
+            errors++;
+            continue;
+        }
+
+        const descricao = getCol("Descrição") || getCol("Descricao") || getCol("Detalhamento") || getCol("Subdescrição") || '';
+        const status = getCol("Status") || 'Em Análise';
+        const prioridade = getCol("Prioridade") || 'Média';
+        const origem = getCol("Origem") || 'Alê Portela';
+
+        const uniqueKey = `${municipioId}_${titulo.toLowerCase().trim()}_${origem}`;
+        if (existingDemandasMap.has(uniqueKey)) {
+            continue; // Já importado, pular
+        }
+
+        try {
+            await createDemanda({
+                municipio_id: municipioId,
+                titulo,
+                descricao,
+                tipo: 'Geral',
+                status,
+                prioridade,
+                origem
+            });
+            successCount++;
+            existingDemandasMap.add(uniqueKey);
+        } catch (e) {
+            console.error(`Erro ao criar demanda:`, e);
+            errors++;
+        }
+    }
+
+    return { success: successCount, errors };
+};

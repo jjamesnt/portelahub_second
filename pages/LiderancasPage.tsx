@@ -681,21 +681,21 @@ const LiderancasPage: React.FC<LiderancasPageProps> = ({ navigateTo, params }) =
                                 <div className="grid grid-cols-2 gap-3">
                                     <div>
                                         <label className="text-xs font-bold text-slate-500 uppercase">Cargo <span className="text-rose-500">*</span></label>
-                                        <select
-                                            ref={cargoRef}
-                                            value={editingLideranca.cargo || 'Vereador'}
-                                            onChange={e => {
-                                                setEditingLideranca({ ...editingLideranca, cargo: e.target.value as any });
-                                                if (formErrors.includes("cargo")) setFormErrors(prev => prev.filter(f => f !== "cargo"));
-                                            }}
-                                            className={`w-full mt-1 p-2.5 border rounded-xl bg-slate-50 dark:bg-slate-900/50 ${formErrors.includes("cargo") ? 'border-rose-500 ring-2 ring-rose-500/10' : 'border-slate-200 dark:border-slate-700'} text-sm focus:ring-2 focus:ring-turquoise/20 outline-none`}
-                                        >
-                                            <option>Vereador</option>
-                                            <option>Prefeito</option>
-                                            <option>Vice-Prefeito</option>
-                                            <option>Liderança Comunitária</option>
-                                            <option>Ex-Prefeito</option>
-                                        </select>
+                                        <div className="relative group mt-1">
+                                            <select
+                                                ref={cargoRef}
+                                                value={editingLideranca.cargo || 'Vereador'}
+                                                onChange={e => {
+                                                    setEditingLideranca({ ...editingLideranca, cargo: e.target.value as any });
+                                                    if (formErrors.includes("cargo")) setFormErrors(prev => prev.filter(f => f !== "cargo"));
+                                                }}
+                                                className={`w-full p-2.5 pr-10 border rounded-xl bg-slate-50 dark:bg-slate-900/50 ${formErrors.includes("cargo") ? 'border-rose-500 ring-2 ring-rose-500/10' : 'border-slate-200 dark:border-slate-700'} text-sm appearance-none cursor-pointer outline-none focus:ring-2 focus:ring-turquoise/20`}
+                                            >
+                                                <option>Vereador</option>
+                                                <option>Prefeito</option>
+                                            </select>
+                                            <span className="material-symbols-outlined absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-[20px] pointer-events-none">keyboard_arrow_down</span>
+                                        </div>
                                     </div>
                                     <div>
                                         <label className="text-xs font-bold text-slate-500 uppercase">Partido</label>
@@ -825,30 +825,36 @@ const LiderancasPage: React.FC<LiderancasPageProps> = ({ navigateTo, params }) =
                                 <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-100 dark:border-slate-700 mt-4">
                                     <div>
                                         <label className="text-xs font-bold text-slate-500 uppercase">Mandato <span className="text-rose-500">*</span></label>
-                                        <select
-                                            ref={mandatoRef}
-                                            value={editingLideranca.origem || ''}
-                                            onChange={e => {
-                                                setEditingLideranca({ ...editingLideranca, origem: e.target.value as any });
-                                                if (formErrors.includes("mandato")) setFormErrors(prev => prev.filter(f => f !== "mandato"));
-                                            }}
-                                            className={`w-full mt-1 p-2.5 border rounded-xl bg-slate-50 dark:bg-slate-900/50 ${formErrors.includes("mandato") ? 'border-rose-500 ring-2 ring-rose-500/10' : 'border-slate-200 dark:border-slate-700'} text-sm focus:ring-2 focus:ring-turquoise/20 outline-none`}
-                                        >
-                                            <option value="">Selecione...</option>
-                                            <option>Alê Portela</option>
-                                            <option>Lincoln Portela</option>
-                                        </select>
+                                        <div className="relative group mt-1">
+                                            <select
+                                                ref={mandatoRef}
+                                                value={editingLideranca.origem || ''}
+                                                onChange={e => {
+                                                    setEditingLideranca({ ...editingLideranca, origem: e.target.value as any });
+                                                    if (formErrors.includes("mandato")) setFormErrors(prev => prev.filter(f => f !== "mandato"));
+                                                }}
+                                                className={`w-full p-2.5 pr-10 border rounded-xl bg-slate-50 dark:bg-slate-900/50 ${formErrors.includes("mandato") ? 'border-rose-500 ring-2 ring-rose-500/10' : 'border-slate-200 dark:border-slate-700'} text-sm appearance-none cursor-pointer outline-none focus:ring-2 focus:ring-turquoise/20`}
+                                            >
+                                                <option value="">Selecione...</option>
+                                                <option>Alê Portela</option>
+                                                <option>Lincoln Portela</option>
+                                            </select>
+                                            <span className="material-symbols-outlined absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-[20px] pointer-events-none">keyboard_arrow_down</span>
+                                        </div>
                                     </div>
                                     <div>
                                         <label className="text-xs font-bold text-slate-500 uppercase">Status</label>
-                                        <select
-                                            value={editingLideranca.status || 'Ativo'}
-                                            onChange={e => setEditingLideranca({ ...editingLideranca, status: e.target.value as any })}
-                                            className="w-full mt-1 p-2.5 border rounded-xl bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700 text-sm focus:ring-2 focus:ring-turquoise/20 outline-none"
-                                        >
-                                            <option>Ativo</option>
-                                            <option>Inativo</option>
-                                        </select>
+                                        <div className="relative group mt-1">
+                                            <select
+                                                value={editingLideranca.status || 'Ativo'}
+                                                onChange={e => setEditingLideranca({ ...editingLideranca, status: e.target.value as any })}
+                                                className="w-full p-2.5 pr-10 border rounded-xl bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700 text-sm appearance-none cursor-pointer outline-none focus:ring-2 focus:ring-turquoise/20"
+                                            >
+                                                <option>Ativo</option>
+                                                <option>Inativo</option>
+                                            </select>
+                                            <span className="material-symbols-outlined absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-[20px] pointer-events-none">keyboard_arrow_down</span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

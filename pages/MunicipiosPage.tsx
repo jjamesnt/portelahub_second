@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo, useEffect, useContext, useCallback, useRef } from 'react';
-import { getMunicipios, getMunicipiosSimples, createMunicipio, getAssessores } from '../services/api';
-import { Municipio, Assessor } from '../types';
+import { getMunicipios, createMunicipio, getAssessores, getLiderancas } from '../services/api';
+import { Municipio, Assessor, Lideranca } from '../types';
 import { useAppContext } from '../hooks/useAppContext';
 import { AppContext } from '../context/AppContext';
 
@@ -71,12 +71,12 @@ const HighlightText: React.FC<{ text: string, highlight: string }> = ({ text, hi
 // Sort direction type
 type SortDirection = 'asc' | 'desc' | null;
 type SortField = 'nome' | 'regiao' | 'totalRecursos' | 'totalDemandas' | 'statusAtividade' | 'populacao' | 'statusAtendimento' | 'principalDemanda';
-
 const MunicipiosPage: React.FC<MunicipiosPageProps> = ({ navigateTo }) => {
     const { selectedMandato } = useAppContext();
 
     const [municipios, setMunicipios] = useState<Municipio[]>([]);
     const [assessores, setAssessores] = useState<Assessor[]>([]);
+    const [liderancas, setLiderancas] = useState<Lideranca[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [showModal, setShowModal] = useState(false);
@@ -90,12 +90,11 @@ const MunicipiosPage: React.FC<MunicipiosPageProps> = ({ navigateTo }) => {
     const [filterAssessor, setFilterAssessor] = useState<string>('Todos');
     const [filterStatusPrefeito, setFilterStatusPrefeito] = useState<string>('Todos');
     const [filterStatusAtividade, setFilterStatusAtividade] = useState<string[]>([]);
+    const [onlyActive, setOnlyActive] = useState(true);
 
     // Sorting
     const [sortField, setSortField] = useState<SortField | null>(null);
     const [sortDirection, setSortDirection] = useState<SortDirection>(null);
-
-    // Votes data
 
     // Form state
     const [formData, setFormData] = useState({
@@ -132,14 +131,16 @@ const MunicipiosPage: React.FC<MunicipiosPageProps> = ({ navigateTo }) => {
 
             try {
                 setIsLoading(true);
-                const [municipiosData, assessoresData] = await Promise.all([
-                    getMunicipiosSimples().catch(() => []),
-                    getAssessores().catch(() => [])
+                const [municipiosData, assessoresData, liderancasData] = await Promise.all([
+                    getMunicipios().catch(() => []),
+                    getAssessores().catch(() => []),
+                    getLiderancas().catch(() => [])
                 ]);
                 
                 if (isMounted) {
                     setMunicipios(municipiosData || []);
                     setAssessores(assessoresData || []);
+                    setLiderancas(liderancasData || []);
                     setError(null);
                 }
             } catch (err) {
@@ -176,6 +177,19 @@ const MunicipiosPage: React.FC<MunicipiosPageProps> = ({ navigateTo }) => {
     // Filter and sort municipalities
     const municipiosFiltrados = useMemo(() => {
         let filtered = municipios.filter(m => {
+            // Apenas ativos filter
+            if (onlyActive) {
+                const hasData = (m.totalApoiadores && m.totalApoiadores > 0) || 
+                                (m.totalRecursos && m.totalRecursos > 0) || 
+                                (m.totalDemandas && m.totalDemandas > 0) || 
+                                ((m.statusPrefeito as any) && (m.statusPrefeito as any) !== 'Não informado' && m.statusPrefeito !== 'Não') || 
+                                m.lincolnFechado || 
+                                m.idene || 
+                                m.statusAtendimento || 
+                                m.principalDemanda || 
+                                m.sugestaoSedese;
+                if (!hasData) return false;
+            }
             // Search filter
             if (debouncedSearch && !m.nome.toLowerCase().includes(debouncedSearch.toLowerCase())) return false;
             // Region filter
@@ -216,7 +230,7 @@ const MunicipiosPage: React.FC<MunicipiosPageProps> = ({ navigateTo }) => {
         }
 
         return filtered;
-    }, [debouncedSearch, filterRegion, filterAssessor, filterStatusPrefeito, filterStatusAtividade, municipios, sortField, sortDirection]);
+    }, [debouncedSearch, filterRegion, filterAssessor, filterStatusPrefeito, filterStatusAtividade, municipios, sortField, sortDirection, onlyActive]);
 
     // Summary stats
     const summaryStats = useMemo(() => ({
@@ -371,45 +385,59 @@ const MunicipiosPage: React.FC<MunicipiosPageProps> = ({ navigateTo }) => {
             </div>
 
             <div className="bg-white dark:bg-slate-800 p-3 md:p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 mb-6 md:mb-8">
-                <div className="flex flex-col md:flex-row gap-2 md:gap-3">
-                    <div className="flex-1 relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 material-symbols-outlined text-[18px]">search</span>
-                        <input
-                            type="text"
-                            placeholder="Buscar município..."
-                            value={searchTerm}
-                            onChange={e => setSearchTerm(e.target.value)}
-                            className="w-full pl-9 pr-4 py-2 md:py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs md:text-sm outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
-                        />
-                    </div>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2 flex-[2]">
-                        <FilterSelect
-                            value={filterRegion}
-                            onChange={setFilterRegion}
-                            options={uniqueRegions}
-                            placeholder="Regiões"
-                        />
-                        <FilterSelect
-                            value={filterAssessor}
-                            onChange={setFilterAssessor}
-                            options={assessores.map(a => a.nome).sort()}
-                            placeholder="Assessores"
-                        />
-                        <FilterSelect
-                            value={filterStatusPrefeito}
-                            onChange={setFilterStatusPrefeito}
-                            options={['Prefeitura Parceira', 'Prefeitura Fechada', 'Não']}
-                            placeholder="Status Prefeito"
-                        />
-                    </div>
-                    {hasActiveFilters && (
-                        <button
-                            onClick={clearFilters}
-                            className="px-4 py-2 border border-rose-200 text-rose-500 rounded-xl hover:bg-rose-50 transition-all text-xs font-bold"
+                <div className="flex flex-col gap-3">
+                    <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 items-start sm:items-center justify-between">
+                        <div 
+                            className="flex items-center gap-2 px-3 py-1.5 bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-100/50 dark:border-indigo-900/30 rounded-xl cursor-pointer select-none transition-all hover:bg-indigo-50 dark:hover:bg-indigo-950/30" 
+                            onClick={() => setOnlyActive(!onlyActive)}
                         >
-                            Limpar
-                        </button>
-                    )}
+                            <span className={`material-symbols-outlined text-[24px] transition-all leading-none ${onlyActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'}`}>
+                                {onlyActive ? 'toggle_on' : 'toggle_off'}
+                            </span>
+                            <span className="text-xs md:text-sm font-bold text-indigo-950 dark:text-indigo-300">Espelhar apenas municípios ativos</span>
+                        </div>
+                        {hasActiveFilters && (
+                            <button
+                                onClick={clearFilters}
+                                className="px-4 py-1.5 border border-rose-200 text-rose-500 rounded-xl hover:bg-rose-50 transition-all text-xs font-bold self-end sm:self-auto"
+                            >
+                                Limpar Filtros
+                            </button>
+                        )}
+                    </div>
+                    <div className="h-px bg-slate-100 dark:bg-slate-700/50 my-0.5"></div>
+                    <div className="flex flex-col md:flex-row gap-2 md:gap-3">
+                        <div className="flex-1 relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 material-symbols-outlined text-[18px]">search</span>
+                            <input
+                                type="text"
+                                placeholder="Buscar município..."
+                                value={searchTerm}
+                                onChange={e => setSearchTerm(e.target.value)}
+                                className="w-full pl-9 pr-4 py-2 md:py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs md:text-sm outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                            />
+                        </div>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2 flex-[2]">
+                            <FilterSelect
+                                value={filterRegion}
+                                onChange={setFilterRegion}
+                                options={uniqueRegions}
+                                placeholder="Regiões"
+                            />
+                            <FilterSelect
+                                value={filterAssessor}
+                                onChange={setFilterAssessor}
+                                options={assessores.map(a => a.nome).sort()}
+                                placeholder="Assessores"
+                            />
+                            <FilterSelect
+                                value={filterStatusPrefeito}
+                                onChange={setFilterStatusPrefeito}
+                                options={['Prefeitura Parceira', 'Prefeitura Fechada', 'Não']}
+                                placeholder="Status Prefeito"
+                            />
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -450,6 +478,11 @@ const MunicipiosPage: React.FC<MunicipiosPageProps> = ({ navigateTo }) => {
                                     municipiosFiltrados.map(municipio => {
                                         const assessor = assessores.find(a => a.id === municipio.assessorId);
                                         const regionColor = getRegionColor(municipio.regiao);
+                                        
+                                        // Mapear lideranças deste município
+                                        const munNomeNorm = municipio.nome.toLowerCase().trim();
+                                        const municipioLiderancas = liderancas.filter(l => l.municipio && l.municipio.toLowerCase().trim() === munNomeNorm);
+                                        const totalLiderancas = municipioLiderancas.length;
 
                                         return (
                                             <tr 
@@ -458,13 +491,56 @@ const MunicipiosPage: React.FC<MunicipiosPageProps> = ({ navigateTo }) => {
                                                 className="hover:bg-slate-50/80 dark:hover:bg-slate-700/30 transition-colors cursor-pointer group"
                                             >
                                                 <td className="px-6 py-4">
-                                                    <div className="flex flex-col">
-                                                        <span className="text-sm font-bold text-navy-dark dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-                                                            <HighlightText text={municipio.nome} highlight={debouncedSearch} />
-                                                        </span>
-                                                        <span className={`inline-block w-fit mt-1 px-1.5 py-0.5 text-[8px] font-bold rounded-md ${regionColor.bg} ${regionColor.text} uppercase tracking-tighter`}>
-                                                            {municipio.regiao}
-                                                        </span>
+                                                    <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                                                        <div className="flex flex-col shrink-0">
+                                                            <span className="text-sm font-bold text-navy-dark dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                                                                <HighlightText text={municipio.nome} highlight={debouncedSearch} />
+                                                            </span>
+                                                            <span className={`inline-block w-fit mt-1 px-1.5 py-0.5 text-[8px] font-bold rounded-md ${regionColor.bg} ${regionColor.text} uppercase tracking-tighter`}>
+                                                                {municipio.regiao}
+                                                            </span>
+                                                        </div>
+                                                        
+                                                        {/* Tags de contatos e apoios relacionados (Apoiadores, Lideranças) */}
+                                                        <div className="flex flex-col gap-1">
+                                                            {/* Tags de Apoiadores Relacionados */}
+                                                            {municipio.apoiadores && municipio.apoiadores.length > 0 && (
+                                                                <div className="flex flex-wrap gap-1.5 max-w-[320px] md:max-w-[400px]">
+                                                                    {municipio.apoiadores.map((ap: any) => (
+                                                                        <span 
+                                                                            key={ap.id}
+                                                                            title={`${ap.nome} - ${ap.cargo || 'Apoiador'}`}
+                                                                            className="inline-flex items-center gap-1 px-2 py-0.5 bg-indigo-50/80 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border border-indigo-100/60 dark:border-indigo-900/30 rounded-full text-[9px] font-black tracking-tight"
+                                                                        >
+                                                                            <span className="material-symbols-outlined text-[10px] text-indigo-400">person</span>
+                                                                            <span>{ap.nome}</span>
+                                                                            {ap.cargo && (
+                                                                                <span className="opacity-60 font-bold text-[8px]">({ap.cargo})</span>
+                                                                            )}
+                                                                        </span>
+                                                                    ))}
+                                                                </div>
+                                                            )}
+                                                            
+                                                            {/* Tags de Lideranças Relacionadas */}
+                                                            {municipioLiderancas && municipioLiderancas.length > 0 && (
+                                                                <div className="flex flex-wrap gap-1.5 max-w-[320px] md:max-w-[400px]">
+                                                                    {municipioLiderancas.map((lp: any) => (
+                                                                        <span 
+                                                                            key={lp.id}
+                                                                            title={`${lp.nome} - ${lp.cargo || 'Liderança'}`}
+                                                                            className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-50/80 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-100/60 dark:border-amber-900/30 rounded-full text-[9px] font-black tracking-tight"
+                                                                        >
+                                                                            <span className="material-symbols-outlined text-[10px] text-amber-500">groups</span>
+                                                                            <span>{lp.nome}</span>
+                                                                            {lp.cargo && (
+                                                                                <span className="opacity-60 font-bold text-[8px]">({lp.cargo})</span>
+                                                                            )}
+                                                                        </span>
+                                                                    ))}
+                                                                </div>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-4">
@@ -485,6 +561,12 @@ const MunicipiosPage: React.FC<MunicipiosPageProps> = ({ navigateTo }) => {
                                                             <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400 flex items-center gap-1">
                                                                 <span className="material-symbols-outlined text-[12px]">group</span>
                                                                 {(municipio as any).totalApoiadores} {(municipio as any).totalApoiadores === 1 ? 'Apoiador' : 'Apoiadores'}
+                                                            </span>
+                                                        )}
+                                                        {totalLiderancas > 0 && (
+                                                            <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 flex items-center gap-1">
+                                                                <span className="material-symbols-outlined text-[12px]">groups</span>
+                                                                {totalLiderancas} {totalLiderancas === 1 ? 'Liderança' : 'Lideranças'}
                                                             </span>
                                                         )}
                                                     </div>
@@ -579,19 +661,22 @@ const MunicipiosPage: React.FC<MunicipiosPageProps> = ({ navigateTo }) => {
                             {/* Região */}
                             <div>
                                 <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Região <span className="text-rose-500">*</span></label>
-                                <select
-                                    ref={regiaoRef}
-                                    name="regiao"
-                                    value={formData.regiao}
-                                    onChange={e => {
-                                        handleInputChange(e);
-                                        if (formErrors.includes('regiao')) setFormErrors(prev => prev.filter(f => f !== 'regiao'));
-                                    }}
-                                    className={`w-full px-4 py-2 border ${formErrors.includes('regiao') ? 'border-rose-500 ring-2 ring-rose-500/10' : 'border-slate-300 dark:border-slate-600'} rounded-lg focus:ring-2 focus:ring-turquoise/50 dark:bg-slate-700 dark:text-white transition-all`}
-                                >
-                                    <option value="">Selecione uma região</option>
-                                    {regioes.map(r => <option key={r} value={r}>{r}</option>)}
-                                </select>
+                                <div className="relative group mt-1">
+                                    <select
+                                        ref={regiaoRef}
+                                        name="regiao"
+                                        value={formData.regiao}
+                                        onChange={e => {
+                                            handleInputChange(e);
+                                            if (formErrors.includes('regiao')) setFormErrors(prev => prev.filter(f => f !== 'regiao'));
+                                        }}
+                                        className={`w-full pl-4 pr-10 py-2 border ${formErrors.includes('regiao') ? 'border-rose-500 ring-2 ring-rose-500/10' : 'border-slate-300 dark:border-slate-600'} rounded-lg appearance-none cursor-pointer outline-none focus:ring-2 focus:ring-turquoise/50 dark:bg-slate-700 dark:text-white transition-all`}
+                                    >
+                                        <option value="">Selecione uma região</option>
+                                        {regioes.map(r => <option key={r} value={r}>{r}</option>)}
+                                    </select>
+                                    <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-[20px] pointer-events-none">keyboard_arrow_down</span>
+                                </div>
                             </div>
 
                             {/* Row: População e IDH */}
@@ -640,32 +725,38 @@ const MunicipiosPage: React.FC<MunicipiosPageProps> = ({ navigateTo }) => {
                             {/* Assessor */}
                             <div>
                                 <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Assessor Responsável</label>
-                                <select
-                                    name="assessor_id"
-                                    value={formData.assessor_id}
-                                    onChange={handleInputChange}
-                                    className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-turquoise/50 dark:bg-slate-700 dark:text-white"
-                                >
-                                    <option value="">Nenhum assessor atribuído</option>
-                                    {assessores.map(a => <option key={a.id} value={a.id}>{a.nome} - {a.regiaoAtuacao}</option>)}
-                                </select>
+                                <div className="relative group mt-1">
+                                    <select
+                                        name="assessor_id"
+                                        value={formData.assessor_id}
+                                        onChange={handleInputChange}
+                                        className="w-full pl-4 pr-10 py-2 border border-slate-300 dark:border-slate-600 rounded-lg appearance-none cursor-pointer outline-none focus:ring-2 focus:ring-turquoise/50 dark:bg-slate-700 dark:text-white"
+                                    >
+                                        <option value="">Nenhum assessor atribuído</option>
+                                        {assessores.map(a => <option key={a.id} value={a.id}>{a.nome} - {a.regiaoAtuacao}</option>)}
+                                    </select>
+                                    <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-[20px] pointer-events-none">keyboard_arrow_down</span>
+                                </div>
                             </div>
 
                             {/* Status */}
                             <div>
                                 <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Status de Atividade <span className="text-rose-500">*</span></label>
-                                <select
-                                    ref={statusRef}
-                                    name="status_atividade"
-                                    value={formData.status_atividade}
-                                    onChange={e => {
-                                        handleInputChange(e);
-                                        if (formErrors.includes('status')) setFormErrors(prev => prev.filter(f => f !== 'status'));
-                                    }}
-                                    className={`w-full px-4 py-2 border ${formErrors.includes('status') ? 'border-rose-500 ring-2 ring-rose-500/10' : 'border-slate-300 dark:border-slate-600'} rounded-lg focus:ring-2 focus:ring-turquoise/50 dark:bg-slate-700 dark:text-white transition-all`}
-                                >
-                                    {statusOptions.map(s => <option key={s} value={s}>{s}</option>)}
-                                </select>
+                                <div className="relative group mt-1">
+                                    <select
+                                        ref={statusRef}
+                                        name="status_atividade"
+                                        value={formData.status_atividade}
+                                        onChange={e => {
+                                            handleInputChange(e);
+                                            if (formErrors.includes('status')) setFormErrors(prev => prev.filter(f => f !== 'status'));
+                                        }}
+                                        className={`w-full pl-4 pr-10 py-2 border ${formErrors.includes('status') ? 'border-rose-500 ring-2 ring-rose-500/10' : 'border-slate-300 dark:border-slate-600'} rounded-lg appearance-none cursor-pointer outline-none focus:ring-2 focus:ring-turquoise/50 dark:bg-slate-700 dark:text-white transition-all`}
+                                    >
+                                        {statusOptions.map(s => <option key={s} value={s}>{s}</option>)}
+                                    </select>
+                                    <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-[20px] pointer-events-none">keyboard_arrow_down</span>
+                                </div>
                             </div>
 
                             {/* Influência */}

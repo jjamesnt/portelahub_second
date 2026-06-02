@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo, useEffect, useContext } from 'react';
-import { getMunicipios, getMunicipiosSimples, getAssessores, syncSpreadsheetData } from '../services/api';
+import { getMunicipios, getMunicipiosSimples, getAssessores, getApoiadores } from '../services/api';
 import { AppContext } from '../context/AppContext';
 import { Municipio, Assessor, Apoiador } from '../types';
 import Loader from '../components/Loader';
@@ -33,9 +33,8 @@ const ApoiadoresPage: React.FC<ApoiadoresPageProps> = ({ navigateTo }) => {
     // Modal e Sincronia
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isReportModalOpen, setIsReportModalOpen] = useState(false);
-    const [isSyncing, setIsSyncing] = useState(false);
-    const [syncUrl, setSyncUrl] = useState(localStorage.getItem('portela_hub_sync_url') || '');
     const [lastSyncTime, setLastSyncTime] = useState<string | null>(localStorage.getItem('portela_hub_last_sync') || null);
+    const [selectedApoiador, setSelectedApoiador] = useState<any | null>(null);
 
     const fetchData = async () => {
         let isMounted = true;
@@ -51,7 +50,7 @@ const ApoiadoresPage: React.FC<ApoiadoresPageProps> = ({ navigateTo }) => {
             const [munData, assData, apoData] = await Promise.all([
                 getMunicipiosSimples().catch(() => []),
                 getAssessores().catch(() => []),
-                import('../services/api').then(m => m.getApoiadores()).catch(() => [])
+                getApoiadores().catch(() => [])
             ]);
             
             if (isMounted) {
@@ -69,96 +68,45 @@ const ApoiadoresPage: React.FC<ApoiadoresPageProps> = ({ navigateTo }) => {
         }
     };
 
-    const handleSync = async (silent = false) => {
-        let url = syncUrl;
-        
-        if (!silent) {
-            const promptedUrl = prompt("Cole aqui o link da planilha publicada como CSV:", syncUrl);
-            if (!promptedUrl) return;
-            url = promptedUrl;
-        }
 
-        if (!url) return;
-
-        try {
-            if (!silent) setIsSyncing(true);
-            
-            localStorage.setItem('portela_hub_sync_url', url);
-            setSyncUrl(url);
-
-            const result = await syncSpreadsheetData(url);
-            
-            const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            setLastSyncTime(now);
-            localStorage.setItem('portela_hub_last_sync', now);
-
-            if (!silent) {
-                alert(`Sincronização concluída!\n✅ ${result.success} cidades atualizadas.\n❌ ${result.errors} erros.`);
-            }
-            
-            // Recarregar os dados na tela
-            await fetchData();
-        } catch (err: any) {
-            if (!silent) alert("Erro na sincronização: " + err.message);
-            console.error("Erro no auto-sync:", err);
-        } finally {
-            if (!silent) setIsSyncing(false);
-        }
-    };
 
     useEffect(() => {
         localStorage.setItem('portela_hub_apoiadores_view', viewMode);
     }, [viewMode]);
 
     useEffect(() => {
-        const init = async () => {
-            await fetchData();
-            // Se houver uma URL salva, faz o sync automático em background
-            if (syncUrl) {
-                handleSync(true);
-            }
-        };
-        init();
+        fetchData();
     }, []);
 
-    // Filtro para Apoiadores (Iterar por apoiador, agregando dados do município)
+    // Filtro para Apoiadores (dados já vêm completos do getApoiadores com todos os campos do município)
     const apoiadoresFiltrados = useMemo(() => {
-        // Usa apenas os dados do servidor (para evitar duplicidade do mock anterior)
-        const totalBase = apoiadoresTotal.map(a => {
-            // Prioriza o município completo do state 'municipios' (que contém todos os dados políticos e votos)
-            // e cai no fallback parcial apenas se não encontrado.
-            const m = municipios.find(city => city.id === a.municipioId || city.nome.toLowerCase() === a.municipio?.nome?.toLowerCase()) || a.municipio;
-            const assessor = m ? assessores.find(ass => ass.id === m.assessorId) : undefined;
-            return { ...a, municipio: m, assessor };
-        });
-
-        return totalBase.filter(a => {
+        return apoiadoresTotal.filter(a => {
             const m = a.municipio;
             if (!m) return false;
 
             const correspondeBusca = a.nome.toLowerCase().includes(busca.toLowerCase()) || m.nome.toLowerCase().includes(busca.toLowerCase());
             const correspondeRegiao = filtroRegiao === 'Todos' || m.regiao === filtroRegiao;
-            const correspondeAssessor = filtroAssessor === 'Todos' || a.assessor?.nome === filtroAssessor;
-            const correspondeStatus = filtroStatusPrefeito === 'Todos' || m.statusPrefeito === filtroStatusPrefeito;
+            const correspondeAssessor = filtroAssessor === 'Todos' || (a.assessor?.nome === filtroAssessor || a.assessorResp === filtroAssessor);
+            const correspondeStatus = filtroStatusPrefeito === 'Todos' || a.statusPrefeito === filtroStatusPrefeito || m.statusPrefeito === filtroStatusPrefeito;
 
             return correspondeBusca && correspondeRegiao && correspondeAssessor && correspondeStatus;
         });
-    }, [apoiadoresTotal, municipios, assessores, busca, filtroRegiao, filtroAssessor, filtroStatusPrefeito]);
+    }, [apoiadoresTotal, busca, filtroRegiao, filtroAssessor, filtroStatusPrefeito]);
 
     const summaryStats = useMemo(() => {
-        // Contar municípios distintos de apoiadores visíveis
         const municipiosIds = new Set(apoiadoresFiltrados.map(a => a.municipioId));
-        const parceiras = Array.from(municipiosIds).filter(id => {
-            const m = municipios.find(city => city.id === id);
-            return m?.statusPrefeito === 'Prefeitura Parceira' || m?.statusPrefeito === 'Prefeitura Fechada';
-        }).length;
+        const parceiras = apoiadoresFiltrados.filter(a => {
+            const s = a.statusPrefeito || a.municipio?.statusPrefeito;
+            return s === 'Prefeitura Parceira' || s === 'Prefeitura Fechada';
+        });
+        const uniqueParceiras = new Set(parceiras.map(a => a.municipioId));
 
         return {
             totalMunicipios: municipiosIds.size,
-            cidadesParceiras: parceiras,
+            cidadesParceiras: uniqueParceiras.size,
             totalApoiadores: apoiadoresFiltrados.length
         };
-    }, [apoiadoresFiltrados, municipios]);
+    }, [apoiadoresFiltrados]);
 
     const getStatusPrefeitoColor = (status?: string) => {
         switch (status) {
@@ -175,6 +123,18 @@ const ApoiadoresPage: React.FC<ApoiadoresPageProps> = ({ navigateTo }) => {
         setFiltroAssessor('Todos');
         setFiltroStatusPrefeito('Todos');
     };
+
+    const DetailField = ({ icon, label, value, fullWidth, highlight }: { icon: string, label: string, value?: string | null, fullWidth?: boolean, highlight?: boolean }) => (
+        <div className={`p-3 rounded-xl ${highlight ? 'bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800' : 'bg-slate-50 dark:bg-slate-900/50'} ${fullWidth ? 'col-span-2' : ''}`}>
+            <div className="flex items-center gap-1.5 mb-1">
+                <span className={`material-symbols-outlined text-[14px] ${highlight ? 'text-indigo-400' : 'text-slate-400'}`}>{icon}</span>
+                <p className={`text-[9px] font-black uppercase tracking-wider ${highlight ? 'text-indigo-400' : 'text-slate-400'}`}>{label}</p>
+            </div>
+            <p className={`text-sm font-bold ${value ? (highlight ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-700 dark:text-slate-200') : 'text-slate-400'}`}>
+                {value || '—'}
+            </p>
+        </div>
+    );
 
     const FilterSelect = ({ value, onChange, options, placeholder }: { value: string, onChange: (val: string) => void, options: string[], placeholder: string }) => (
         <div className="relative group flex-1">
@@ -237,18 +197,7 @@ const ApoiadoresPage: React.FC<ApoiadoresPageProps> = ({ navigateTo }) => {
                         </button>
                     </div>
 
-                    {profile?.role === 'master' && (
-                        <button 
-                        onClick={() => handleSync()}
-                        disabled={isSyncing}
-                        className="flex items-center justify-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 rounded-xl text-[10px] font-black uppercase tracking-wider hover:border-indigo-500 hover:text-indigo-500 transition-all disabled:opacity-50 shadow-sm h-10"
-                        >
-                            <span className={`material-symbols-outlined text-[18px] ${isSyncing ? 'animate-spin' : ''}`}>
-                                {isSyncing ? 'sync' : 'table_chart'}
-                            </span>
-                            {isSyncing ? 'Sincronizar' : 'Planilha'}
-                        </button>
-                    )}
+
                     <button 
                       onClick={() => setIsReportModalOpen(true)}
                       className="flex items-center justify-center gap-2 px-4 py-2 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/30 rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-indigo-600 hover:text-white transition-all shadow-sm group h-10"
@@ -367,7 +316,7 @@ const ApoiadoresPage: React.FC<ApoiadoresPageProps> = ({ navigateTo }) => {
                                     return (
                                         <tr 
                                             key={a.id} 
-                                            onClick={() => navigateTo('ApoiadorPerfil', { id: a.id })}
+                                            onClick={() => setSelectedApoiador(a)}
                                             className="hover:bg-slate-50/80 dark:hover:bg-slate-700/30 transition-colors cursor-pointer group"
                                         >
                                             <td className="px-6 py-4">
@@ -480,7 +429,7 @@ const ApoiadoresPage: React.FC<ApoiadoresPageProps> = ({ navigateTo }) => {
                         return (
                             <div 
                                 key={a.id} 
-                                onClick={() => navigateTo('ApoiadorPerfil', { id: a.id })}
+                                onClick={() => setSelectedApoiador(a)}
                                 className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-5 hover:shadow-md transition-all cursor-pointer group"
                             >
                                 <div className="flex items-center gap-4 mb-4">
@@ -574,6 +523,8 @@ const ApoiadoresPage: React.FC<ApoiadoresPageProps> = ({ navigateTo }) => {
                     })}
                 </div>
             )}
+
+
             {/* Modal de Relatório */}
             <ApoiadoresReportModal 
                 isOpen={isReportModalOpen}
@@ -593,13 +544,147 @@ const ApoiadoresPage: React.FC<ApoiadoresPageProps> = ({ navigateTo }) => {
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 onSuccess={() => {
-                    // Recarregar dados se necessário ou apenas fechar
                     setIsModalOpen(false);
                 }}
                 allMunicipios={municipios}
                 allApoiadores={apoiadoresTotal}
                 allAssessores={assessores}
             />
+
+            {/* Modal de Detalhes do Apoiador */}
+            {selectedApoiador && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={() => setSelectedApoiador(null)}>
+                    <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto animate-in slide-in-from-bottom-4 duration-300" onClick={e => e.stopPropagation()}>
+                        {/* Header */}
+                        <div className="relative bg-gradient-to-br from-indigo-600 via-indigo-700 to-purple-700 p-6 rounded-t-3xl">
+                            <button onClick={() => setSelectedApoiador(null)} className="absolute top-4 right-4 size-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors">
+                                <span className="material-symbols-outlined text-white text-[20px]">close</span>
+                            </button>
+                            <div className="flex items-center gap-4">
+                                <div className="size-16 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-white text-xl font-black border border-white/30 shadow-lg">
+                                    {selectedApoiador.nome?.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()}
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-black text-white">{selectedApoiador.nome}</h3>
+                                    <p className="text-indigo-200 text-sm font-bold uppercase tracking-wider">{selectedApoiador.cargo || 'Apoiador'}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Content - 13 colunas da planilha */}
+                        <div className="p-6 space-y-4">
+                            {/* Cidade & Região */}
+                            <div className="grid grid-cols-2 gap-3">
+                                <DetailField icon="location_on" label="Cidade" value={selectedApoiador.municipio?.nome} />
+                                <DetailField icon="map" label="Região" value={selectedApoiador.municipio?.regiao} />
+                            </div>
+
+                            {/* Status Prefeito */}
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl">
+                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-1">Status do Prefeito</p>
+                                    <span className={`inline-block px-2.5 py-1 rounded-lg text-[11px] font-bold ${getStatusPrefeitoColor(selectedApoiador.statusPrefeito || selectedApoiador.municipio?.statusPrefeito)}`}>
+                                        {selectedApoiador.statusPrefeito || selectedApoiador.municipio?.statusPrefeito || '—'}
+                                    </span>
+                                </div>
+                                <div className="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl">
+                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-1">Lincoln Portela Fechado?</p>
+                                    <span className={`inline-block px-2.5 py-1 rounded-lg text-[11px] font-bold ${
+                                        (selectedApoiador.lincolnFechado || selectedApoiador.municipio?.lincolnFechado)
+                                            ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                                            : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
+                                    }`}>
+                                        {(selectedApoiador.lincolnFechado || selectedApoiador.municipio?.lincolnFechado) ? 'SIM' : 'NÃO'}
+                                    </span>
+                                </div>
+                            </div>
+
+                            {/* Votação */}
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl border border-indigo-100 dark:border-indigo-800">
+                                    <p className="text-[9px] font-black text-indigo-400 uppercase tracking-wider mb-1">Votação Alê</p>
+                                    <p className="text-lg font-black text-indigo-600 dark:text-indigo-400">
+                                        {(selectedApoiador.votacaoAle || selectedApoiador.municipio?.votacaoAle)?.toLocaleString() || '—'}
+                                    </p>
+                                </div>
+                                <div className="p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl border border-emerald-100 dark:border-emerald-800">
+                                    <p className="text-[9px] font-black text-emerald-400 uppercase tracking-wider mb-1">Votação Lincoln</p>
+                                    <p className="text-lg font-black text-emerald-600 dark:text-emerald-400">
+                                        {(selectedApoiador.votacaoLincoln || selectedApoiador.municipio?.votacaoLincoln)?.toLocaleString() || '—'}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* IDENE & Assessor */}
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl">
+                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-1">IDENE?</p>
+                                    <span className={`inline-block px-2.5 py-1 rounded-lg text-[11px] font-bold ${
+                                        (selectedApoiador.idene || selectedApoiador.municipio?.idene)
+                                            ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+                                            : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
+                                    }`}>
+                                        {(selectedApoiador.idene || selectedApoiador.municipio?.idene) ? 'SIM' : 'NÃO'}
+                                    </span>
+                                </div>
+                                <DetailField icon="person" label="Assessor Responsável" value={selectedApoiador.assessorResp || selectedApoiador.assessor?.nome} />
+                            </div>
+
+                            {/* Atendimento */}
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl">
+                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-1">Status de Atendimento</p>
+                                    {(selectedApoiador.statusAtendimento || selectedApoiador.municipio?.statusAtendimento) ? (
+                                        <span className={`inline-block px-2.5 py-1 rounded-lg text-[11px] font-bold ${
+                                            (selectedApoiador.statusAtendimento || selectedApoiador.municipio?.statusAtendimento) === 'Contemplado'
+                                                ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                                                : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+                                        }`}>
+                                            {selectedApoiador.statusAtendimento || selectedApoiador.municipio?.statusAtendimento}
+                                        </span>
+                                    ) : <span className="text-sm text-slate-400">—</span>}
+                                </div>
+                                <DetailField icon="category" label="Tipo de Atendimento" value={selectedApoiador.tipoAtendimento || selectedApoiador.municipio?.tipoAtendimento} />
+                            </div>
+
+                            {/* Demanda & SEDESE */}
+                            <DetailField icon="priority_high" label="Principal Demanda" value={selectedApoiador.principalDemanda || selectedApoiador.municipio?.principalDemanda} fullWidth />
+                            <DetailField icon="apartment" label="Sugestão de Programa SEDESE" value={selectedApoiador.sugestaoSedese || selectedApoiador.municipio?.sugestaoSedese} fullWidth highlight />
+
+                            {/* Observação */}
+                            <DetailField icon="notes" label="Observação" value={selectedApoiador.observacao || selectedApoiador.municipio?.observacao} fullWidth />
+
+                            {/* Contato */}
+                            {(selectedApoiador.telefone || selectedApoiador.email) && (
+                                <div className="pt-3 border-t border-slate-100 dark:border-slate-700">
+                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-2">Contato</p>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        {selectedApoiador.telefone && <DetailField icon="phone" label="Telefone" value={selectedApoiador.telefone} />}
+                                        {selectedApoiador.email && <DetailField icon="mail" label="Email" value={selectedApoiador.email} />}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Footer */}
+                        <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-700 flex justify-between items-center">
+                            <button
+                                onClick={() => { setSelectedApoiador(null); navigateTo('ApoiadorPerfil', { id: selectedApoiador.id }); }}
+                                className="text-xs font-bold text-indigo-600 hover:text-indigo-700 flex items-center gap-1 transition-colors"
+                            >
+                                <span className="material-symbols-outlined text-[16px]">open_in_new</span>
+                                Ver Perfil Completo
+                            </button>
+                            <button
+                                onClick={() => setSelectedApoiador(null)}
+                                className="px-5 py-2 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl text-xs font-bold hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
+                            >
+                                Fechar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

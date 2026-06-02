@@ -1,13 +1,15 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { Recurso } from '../types';
 import { createRecurso, getRecursosByMunicipio } from '../services/api';
+import { AppContext } from '../context/AppContext';
 
 interface RecursosCardProps {
     municipioId: string;
 }
 
 const RecursosCard: React.FC<RecursosCardProps> = ({ municipioId }) => {
+    const context = useContext(AppContext);
     const [recursos, setRecursos] = useState<Recurso[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
@@ -69,7 +71,11 @@ const RecursosCard: React.FC<RecursosCardProps> = ({ municipioId }) => {
             fetchRecursos(); // Recarrega a lista
         } catch (error) {
             console.error('Erro ao criar recurso:', error);
-            alert('Erro ao criar recurso.');
+            if (context) {
+                context.showToast('Erro ao criar recurso.', 'error');
+            } else {
+                alert('Erro ao criar recurso.');
+            }
         } finally {
             setIsSaving(false);
         }

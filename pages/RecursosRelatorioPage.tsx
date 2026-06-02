@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import { Recurso } from '../types';
 import MandatoBadge from '../components/MandatoBadge';
+import { AppContext } from '../context/AppContext';
 
 interface ExtendedRecurso extends Recurso {
     municipio_nome: string;
@@ -12,6 +13,7 @@ const RecursosRelatorioPage: React.FC = () => {
     const [filtrosAtivos, setFiltrosAtivos] = useState<{ [key: string]: string }>({});
     const [emissor, setEmissor] = useState('Sistema');
     const [dataEmissao] = useState(new Date().toLocaleString('pt-BR'));
+    const context = useContext(AppContext);
 
     useEffect(() => {
         const storedData = sessionStorage.getItem('relatorio_recursos');
@@ -52,7 +54,11 @@ const RecursosRelatorioPage: React.FC = () => {
         } else {
             // Fallback: Copiar para área de transferência
             navigator.clipboard.writeText(window.location.href);
-            alert('Link do relatório copiado para a área de transferência!');
+            if (context) {
+                context.showToast('Link do relatório copiado para a área de transferência!', 'success');
+            } else {
+                alert('Link do relatório copiado para a área de transferência!');
+            }
         }
     };
 

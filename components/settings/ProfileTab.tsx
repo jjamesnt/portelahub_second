@@ -10,7 +10,7 @@ interface ProfileTabProps {
 }
 
 export const ProfileTab: React.FC<ProfileTabProps> = ({ profile, signOut }) => {
-    const { setProfile } = useAppContext();
+    const { setProfile, showToast } = useAppContext();
     const [saving, setSaving] = useState(false);
     const [showSuccessModal, setShowSuccessModal] = useState(false);
 
@@ -41,7 +41,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ profile, signOut }) => {
                     setShowSuccessModal(true);
                 } catch (err) {
                     console.error(err);
-                    alert('Erro ao atualizar perfil.');
+                    showToast('Erro ao atualizar perfil.', 'error');
                 } finally {
                     setSaving(false);
                 }

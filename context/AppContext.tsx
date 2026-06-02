@@ -34,6 +34,39 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   const isMounted = useRef(true);
 
+  // Sistema de Toast Global
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info'; isOpen: boolean }>({
+    message: '',
+    type: 'success',
+    isOpen: false
+  });
+  const toastTimeoutRef = useRef<any>(null);
+
+  const showToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
+    if (toastTimeoutRef.current) {
+      clearTimeout(toastTimeoutRef.current);
+    }
+    setToast({ message, type, isOpen: true });
+    toastTimeoutRef.current = setTimeout(() => {
+      setToast(prev => ({ ...prev, isOpen: false }));
+    }, 3500);
+  };
+
+  const hideToast = () => {
+    if (toastTimeoutRef.current) {
+      clearTimeout(toastTimeoutRef.current);
+    }
+    setToast(prev => ({ ...prev, isOpen: false }));
+  };
+
+  useEffect(() => {
+    return () => {
+      if (toastTimeoutRef.current) {
+        clearTimeout(toastTimeoutRef.current);
+      }
+    };
+  }, []);
+
   const loadPermissions = async () => {
     try {
       const data = await roleService.getRolePermissions();
@@ -208,6 +241,9 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
       signOut,
       impersonateUser,
       stopImpersonating,
+      toast,
+      showToast,
+      hideToast,
       rolePermissions,
       setRolePermissions,
       roleDisplayNames,

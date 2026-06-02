@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { broadcastEvent, getAssessores, getLiderancas } from '../services/api';
 import { Assessor, Lideranca, EventoAgenda } from '../types';
 import Loader from './Loader';
 import ErrorModal from './ErrorModal';
+import { AppContext } from '../context/AppContext';
 
 interface BroadcastModalProps {
     isOpen: boolean;
@@ -50,6 +51,8 @@ const BroadcastModal: React.FC<BroadcastModalProps> = ({ isOpen, onClose, event 
         }
     }, [isOpen]);
 
+    const context = useContext(AppContext);
+
     const handleSend = async () => {
         setIsSending(true);
         try {
@@ -88,7 +91,11 @@ const BroadcastModal: React.FC<BroadcastModalProps> = ({ isOpen, onClose, event 
             const validRecipients = selectedRecipients.filter(r => r.phone);
 
             if (validRecipients.length === 0) {
-                alert("Nenhum destinatário com telefone encontrado.");
+                if (context) {
+                    context.showToast("Nenhum destinatário com telefone encontrado.", "error");
+                } else {
+                    alert("Nenhum destinatário com telefone encontrado.");
+                }
                 return;
             }
 

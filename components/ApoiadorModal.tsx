@@ -117,8 +117,8 @@ const ApoiadorModal: React.FC<ApoiadorModalProps> = ({ isOpen, onClose, onSucces
         const validMunicipio = isCreatingMunicipio 
             ? (newMunicipioData.nome && newMunicipioData.regiao)
             : formData.municipioId;
-
-        if (!formData.nome || !validMunicipio) return;
+        const validCargo = ['Prefeito', 'Prefeita', 'Vereador', 'Vereadora'].includes(formData.cargo);
+        if (!formData.nome || !formData.telefone || !validCargo || !validMunicipio) return;
         setIsSaving(true);
 
         try {
@@ -288,16 +288,19 @@ const ApoiadorModal: React.FC<ApoiadorModalProps> = ({ isOpen, onClose, onSucces
                                         className="w-full p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs"
                                     />
                                     <div className="flex gap-2">
-                                        <select 
-                                            value={newMunicipioData.regiao}
-                                            onChange={e => setNewMunicipioData(prev => ({ ...prev, regiao: e.target.value }))}
-                                            className="flex-1 p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs"
-                                        >
-                                            <option value="">Região?</option>
-                                            {['Central Mineira', 'Zona da Mata', 'Norte de Minas', 'Sul de Minas', 'Triângulo Mineiro', 'Alto Paranaíba', 'Oeste de Minas'].map(r => (
-                                                <option key={r} value={r}>{r}</option>
-                                            ))}
-                                        </select>
+                                        <div className="relative group flex-1">
+                                            <select 
+                                                value={newMunicipioData.regiao}
+                                                onChange={e => setNewMunicipioData(prev => ({ ...prev, regiao: e.target.value }))}
+                                                className="w-full p-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs appearance-none cursor-pointer outline-none focus:ring-2 focus:ring-indigo-500/20"
+                                            >
+                                                <option value="">Região?</option>
+                                                {['Central Mineira', 'Zona da Mata', 'Norte de Minas', 'Sul de Minas', 'Triângulo Mineiro', 'Alto Paranaíba', 'Oeste de Minas'].map(r => (
+                                                    <option key={r} value={r}>{r}</option>
+                                                ))}
+                                            </select>
+                                            <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-[16px] pointer-events-none">keyboard_arrow_down</span>
+                                        </div>
                                         <button onClick={() => setIsCreatingMunicipio(false)} className="px-3 bg-emerald-500 text-white rounded-lg text-[10px] font-black uppercase">OK</button>
                                     </div>
                                 </div>
@@ -324,7 +327,10 @@ const ApoiadorModal: React.FC<ApoiadorModalProps> = ({ isOpen, onClose, onSucces
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Nome Completo</label>
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">
+                                <span>Nome Completo</span>
+                                <span className="text-rose-500 font-bold">*</span>
+                            </label>
                             <input 
                                 type="text"
                                 value={formData.nome || ''}
@@ -334,14 +340,24 @@ const ApoiadorModal: React.FC<ApoiadorModalProps> = ({ isOpen, onClose, onSucces
                             />
                         </div>
                         <div>
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Cargo / Função</label>
-                            <input 
-                                type="text"
-                                value={formData.cargo || ''}
-                                onChange={e => setFormData((prev: any) => ({ ...prev, cargo: e.target.value }))}
-                                className="w-full mt-1 p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 rounded-xl text-sm font-bold"
-                                placeholder="Ex: Vereador..."
-                            />
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">
+                                <span>Cargo / Função</span>
+                                <span className="text-rose-500 font-bold">*</span>
+                            </label>
+                            <div className="relative group mt-1">
+                                <select
+                                    value={formData.cargo || ''}
+                                    onChange={e => setFormData((prev: any) => ({ ...prev, cargo: e.target.value }))}
+                                    className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 rounded-xl text-sm font-bold appearance-none cursor-pointer outline-none focus:ring-2 focus:ring-indigo-500/20"
+                                >
+                                    <option value="" disabled>Selecione...</option>
+                                    <option value="Prefeito">Prefeito</option>
+                                    <option value="Prefeita">Prefeita</option>
+                                    <option value="Vereador">Vereador</option>
+                                    <option value="Vereadora">Vereadora</option>
+                                </select>
+                                <span className="material-symbols-outlined absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-[20px] pointer-events-none">keyboard_arrow_down</span>
+                            </div>
                         </div>
                     </div>
 
@@ -355,12 +371,16 @@ const ApoiadorModal: React.FC<ApoiadorModalProps> = ({ isOpen, onClose, onSucces
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Telefone</label>
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">
+                                <span>Telefone</span>
+                                <span className="text-rose-500 font-bold">*</span>
+                            </label>
                             <input 
                                 type="text"
                                 value={formData.telefone || ''}
                                 onChange={e => setFormData((prev: any) => ({ ...prev, telefone: e.target.value }))}
                                 className="w-full mt-1 p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 rounded-xl text-sm font-bold"
+                                placeholder="(00) 00000-0000"
                             />
                         </div>
                         <div>
@@ -379,27 +399,33 @@ const ApoiadorModal: React.FC<ApoiadorModalProps> = ({ isOpen, onClose, onSucces
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Status Prefeito</label>
-                                <select 
-                                    value={formData.statusPrefeito || ''}
-                                    onChange={e => setFormData((prev: any) => ({ ...prev, statusPrefeito: e.target.value }))}
-                                    className="w-full mt-1 p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 rounded-xl text-sm font-bold"
-                                >
-                                    <option value="">Não informado</option>
-                                    <option value="Prefeitura Parceira">Prefeitura Parceira</option>
-                                    <option value="Prefeitura Fechada">Prefeitura Fechada</option>
-                                    <option value="Não">Não</option>
-                                </select>
+                                <div className="relative group mt-1">
+                                    <select 
+                                        value={formData.statusPrefeito || ''}
+                                        onChange={e => setFormData((prev: any) => ({ ...prev, statusPrefeito: e.target.value }))}
+                                        className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 rounded-xl text-sm font-bold appearance-none cursor-pointer outline-none focus:ring-2 focus:ring-indigo-500/20"
+                                    >
+                                        <option value="">Não informado</option>
+                                        <option value="Prefeitura Parceira">Prefeitura Parceira</option>
+                                        <option value="Prefeitura Fechada">Prefeitura Fechada</option>
+                                        <option value="Não">Não</option>
+                                    </select>
+                                    <span className="material-symbols-outlined absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-[20px] pointer-events-none">keyboard_arrow_down</span>
+                                </div>
                             </div>
                             <div>
                                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Lincoln Fechado?</label>
-                                <select 
-                                    value={formData.lincolnFechado ? 'Sim' : 'Não'}
-                                    onChange={e => setFormData((prev: any) => ({ ...prev, lincolnFechado: e.target.value === 'Sim' }))}
-                                    className="w-full mt-1 p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 rounded-xl text-sm font-bold"
-                                >
-                                    <option value="Não">Não</option>
-                                    <option value="Sim">Sim</option>
-                                </select>
+                                <div className="relative group mt-1">
+                                    <select 
+                                        value={formData.lincolnFechado ? 'Sim' : 'Não'}
+                                        onChange={e => setFormData((prev: any) => ({ ...prev, lincolnFechado: e.target.value === 'Sim' }))}
+                                        className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 rounded-xl text-sm font-bold appearance-none cursor-pointer outline-none focus:ring-2 focus:ring-indigo-500/20"
+                                    >
+                                        <option value="Não">Não</option>
+                                        <option value="Sim">Sim</option>
+                                    </select>
+                                    <span className="material-symbols-outlined absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-[20px] pointer-events-none">keyboard_arrow_down</span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -419,7 +445,7 @@ const ApoiadorModal: React.FC<ApoiadorModalProps> = ({ isOpen, onClose, onSucces
                     <button onClick={onClose} className="px-6 py-2.5 text-xs font-black uppercase text-slate-400">Cancelar</button>
                     <button 
                         onClick={handleSave}
-                        disabled={isSaving || !formData.nome || !formData.municipioId}
+                        disabled={isSaving || !formData.nome || !formData.telefone || !['Prefeito', 'Prefeita', 'Vereador', 'Vereadora'].includes(formData.cargo) || !formData.municipioId}
                         className="px-8 py-2.5 bg-indigo-600 text-white rounded-xl text-xs font-black uppercase shadow-xl disabled:opacity-50"
                     >
                         {isSaving ? 'Salvando...' : 'Salvar Apoiador'}

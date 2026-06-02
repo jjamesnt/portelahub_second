@@ -4,6 +4,7 @@ import Loader from '../Loader';
 import { NovoUsuarioModal } from '../NovoUsuarioModal';
 import { profileService } from '../../services/profileService';
 import SuccessModal from '../SuccessModal';
+import { useAppContext } from '../../hooks/useAppContext';
 
 interface AccessManagementTabProps {
     profiles: Profile[];
@@ -38,11 +39,17 @@ export const AccessManagementTab: React.FC<AccessManagementTabProps> = ({
     isNovoUsuarioModalOpen,
     setIsNovoUsuarioModalOpen
 }) => {
+    const { showToast } = useAppContext();
     const [showSuccessModal, setShowSuccessModal] = useState(false);
     const [successMessage, setSuccessMessage] = useState('');
     const [editingPermissionsId, setEditingPermissionsId] = useState<string | null>(null);
     const [testResult, setTestResult] = useState<string | null>(null);
     const [runningTest, setRunningTest] = useState(false);
+
+    // Estados para edição inline de nome
+    const [editingNameId, setEditingNameId] = useState<string | null>(null);
+    const [editingNameValue, setEditingNameValue] = useState('');
+    const [savingName, setSavingName] = useState(false);
 
     const runApiTest = async () => {
         setRunningTest(true);
@@ -171,28 +178,65 @@ export const AccessManagementTab: React.FC<AccessManagementTabProps> = ({
                                     <tr className="hover:bg-slate-50/50 dark:hover:bg-slate-900/50 transition-colors">
                                     <td className="px-5 py-4">
                                         <div className="flex-1 min-w-0">
-                                            <div className="flex items-center gap-2">
-                                                <h4 className="text-sm font-bold text-navy-dark dark:text-white truncate">{p.full_name}</h4>
-                                                <button 
-                                                    onClick={async () => {
-                                                        const name = prompt('Editar nome do usuário:', p.full_name);
-                                                        if (name && name !== p.full_name) {
+                                            {editingNameId === p.id ? (
+                                                <div className="flex items-center gap-1.5">
+                                                    <input 
+                                                        type="text" 
+                                                        value={editingNameValue} 
+                                                        onChange={e => setEditingNameValue(e.target.value)}
+                                                        disabled={savingName}
+                                                        className="px-2 py-1 text-sm font-medium border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900 text-navy-dark dark:text-white focus:border-turquoise outline-none w-44"
+                                                        autoFocus
+                                                    />
+                                                    <button 
+                                                        onClick={async () => {
+                                                            if (!editingNameValue.trim() || editingNameValue === p.full_name) {
+                                                                setEditingNameId(null);
+                                                                return;
+                                                            }
+                                                            setSavingName(true);
                                                             try {
-                                                                await profileService.updateProfile(p.id, { full_name: name });
+                                                                await profileService.updateProfile(p.id, { full_name: editingNameValue });
                                                                 await loadProfiles();
-                                                                setSuccessMessage('Nome do usuário atualizado com sucesso!');
-                                                                setShowSuccessModal(true);
+                                                                showToast('Nome do usuário atualizado!', 'success');
+                                                                setEditingNameId(null);
                                                             } catch (err) {
                                                                 console.error('Erro ao editar nome:', err);
-                                                                alert('Erro ao editar nome.');
+                                                                showToast('Erro ao editar nome.', 'error');
+                                                            } finally {
+                                                                setSavingName(false);
                                                             }
-                                                        }
-                                                    }}
-                                                    className="text-slate-300 hover:text-turquoise transition-colors"
-                                                >
-                                                    <span className="material-symbols-outlined text-[14px]">edit</span>
-                                                </button>
-                                            </div>
+                                                        }}
+                                                        disabled={savingName}
+                                                        className="text-emerald-500 hover:text-emerald-600 transition-colors p-1"
+                                                        title="Salvar"
+                                                    >
+                                                        <span className="material-symbols-outlined text-[18px]">check</span>
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => setEditingNameId(null)}
+                                                        disabled={savingName}
+                                                        className="text-rose-500 hover:text-rose-600 transition-colors p-1"
+                                                        title="Cancelar"
+                                                    >
+                                                        <span className="material-symbols-outlined text-[18px]">close</span>
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <div className="flex items-center gap-2">
+                                                    <h4 className="text-sm font-bold text-navy-dark dark:text-white truncate">{p.full_name}</h4>
+                                                    <button 
+                                                        onClick={() => {
+                                                            setEditingNameId(p.id);
+                                                            setEditingNameValue(p.full_name);
+                                                        }}
+                                                        className="text-slate-300 hover:text-turquoise transition-colors"
+                                                        title="Editar nome"
+                                                    >
+                                                        <span className="material-symbols-outlined text-[14px]">edit</span>
+                                                    </button>
+                                                </div>
+                                            )}
                                             <p className="text-[10px] text-slate-500 truncate">{p.email}</p>
                                         </div>
                                     </td>

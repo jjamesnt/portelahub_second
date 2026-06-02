@@ -7,9 +7,10 @@ interface ApoiadoresCardProps {
     onAddClick: () => void;
     onEditClick: (apoiador: Apoiador) => void;
     onDeleteClick: (id: string) => void;
+    onApoiadorClick?: (id: string) => void;
 }
 
-const ApoiadoresCard: React.FC<ApoiadoresCardProps> = ({ apoiadores, onAddClick, onEditClick, onDeleteClick }) => {
+const ApoiadoresCard: React.FC<ApoiadoresCardProps> = ({ apoiadores, onAddClick, onEditClick, onDeleteClick, onApoiadorClick }) => {
     return (
         <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 shadow-sm border border-slate-200 dark:border-slate-700">
             <div className="flex justify-between items-center mb-6">
@@ -43,8 +44,17 @@ const ApoiadoresCard: React.FC<ApoiadoresCardProps> = ({ apoiadores, onAddClick,
                                         <span className="material-symbols-outlined text-xl">person</span>
                                     </div>
                                 )}
-                                <div className="flex flex-col min-w-0">
-                                    <span className="text-xs font-bold text-navy-dark dark:text-white truncate">{a.nome}</span>
+                                <div className="flex flex-col min-w-0 text-left">
+                                    {onApoiadorClick ? (
+                                        <button 
+                                            onClick={() => onApoiadorClick(a.id)}
+                                            className="text-xs font-black text-indigo-600 dark:text-indigo-400 hover:underline text-left truncate"
+                                        >
+                                            {a.nome}
+                                        </button>
+                                    ) : (
+                                        <span className="text-xs font-bold text-navy-dark dark:text-white truncate">{a.nome}</span>
+                                    )}
                                     <span className="text-[10px] text-slate-500 font-medium truncate italic mb-1">{a.cargo || 'Apoiador'}</span>
                                     
                                     {/* Badges de Informação Política */}

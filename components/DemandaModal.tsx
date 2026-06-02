@@ -117,29 +117,35 @@ const DemandaModal: React.FC<DemandaModalProps> = ({ municipioId, isOpen, onClos
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Status</label>
-                            <select
-                                name="status"
-                                value={formData.status}
-                                onChange={handleInputChange}
-                                className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all dark:text-white"
-                            >
-                                <option value="Em Análise">Em Análise</option>
-                                <option value="Em Execução">Em Execução</option>
-                                <option value="Concluída">Concluída</option>
-                            </select>
+                            <div className="relative group mt-1">
+                                <select
+                                    name="status"
+                                    value={formData.status}
+                                    onChange={handleInputChange}
+                                    className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 rounded-xl text-sm appearance-none cursor-pointer outline-none focus:ring-2 focus:ring-primary/20"
+                                >
+                                    <option value="Em Análise">Em Análise</option>
+                                    <option value="Em Execução">Em Execução</option>
+                                    <option value="Concluída">Concluída</option>
+                                </select>
+                                <span className="material-symbols-outlined absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-[20px] pointer-events-none">keyboard_arrow_down</span>
+                            </div>
                         </div>
                         <div>
                             <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Prioridade</label>
-                            <select
-                                name="prioridade"
-                                value={formData.prioridade}
-                                onChange={handleInputChange}
-                                className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all dark:text-white"
-                            >
-                                <option value="Baixa">Baixa</option>
-                                <option value="Média">Média</option>
-                                <option value="Alta">Alta</option>
-                            </select>
+                            <div className="relative group mt-1">
+                                <select
+                                    name="prioridade"
+                                    value={formData.prioridade}
+                                    onChange={handleInputChange}
+                                    className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 rounded-xl text-sm appearance-none cursor-pointer outline-none focus:ring-2 focus:ring-primary/20"
+                                >
+                                    <option value="Baixa">Baixa</option>
+                                    <option value="Média">Média</option>
+                                    <option value="Alta">Alta</option>
+                                </select>
+                                <span className="material-symbols-outlined absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-[20px] pointer-events-none">keyboard_arrow_down</span>
+                            </div>
                         </div>
                     </div>
 

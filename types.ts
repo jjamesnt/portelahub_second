@@ -37,6 +37,13 @@ export interface AppContextType {
     createRole: (roleName: string) => Promise<void>;
     deleteRole: (roleName: string) => Promise<void>;
     renameRole: (oldRole: string, newRole: string) => Promise<void>;
+    toast: {
+        message: string;
+        type: 'success' | 'error' | 'info';
+        isOpen: boolean;
+    };
+    showToast: (message: string, type?: 'success' | 'error' | 'info') => void;
+    hideToast: () => void;
 }
 
 export interface Profile {
@@ -61,6 +68,7 @@ export interface Municipio {
     statusAtividade: 'Consolidado' | 'Expansão' | 'Manutenção' | 'Atenção';
     totalRecursos?: number;
     totalDemandas?: number;
+    totalApoiadores?: number;
     latitude?: number;
     longitude?: number;
     // Campos Políticos e de Gestão
@@ -75,6 +83,7 @@ export interface Municipio {
     assessorId?: string;
     votacaoAle?: number;
     votacaoLincoln?: number;
+    apoiadores?: { id: string; nome: string; cargo: string }[];
 }
 
 
@@ -258,6 +267,7 @@ export interface Apoiador {
     id: string;
     municipioId: string;
     municipio?: Municipio;
+    assessor?: Assessor;
     nome: string;
     cargo: string;
     telefone: string;
@@ -265,4 +275,16 @@ export interface Apoiador {
     email: string;
     fotoUrl: string;
     createdAt: string;
+    // Campos derivados do município (planilha original)
+    statusPrefeito?: string;
+    votacaoAle?: number;
+    votacaoLincoln?: number;
+    idene?: boolean;
+    assessorResp?: string;
+    lincolnFechado?: boolean;
+    statusAtendimento?: string;
+    tipoAtendimento?: string;
+    principalDemanda?: string;
+    sugestaoSedese?: string;
+    observacao?: string;
 }

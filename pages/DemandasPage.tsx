@@ -284,38 +284,50 @@ const DemandasPage: React.FC<{ navigateTo: (page: string, params?: any) => void 
                         </div>
 
                         <div className="grid grid-cols-2 md:flex gap-2 min-w-0">
-                            <select
-                                value={filtroStatus}
-                                onChange={e => setFiltroStatus(e.target.value)}
-                                className={`px-2 py-1.5 md:px-3 md:py-2 rounded-xl text-[10px] md:text-xs outline-none transition-all font-bold border ${filtroStatus !== 'Todos' ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300'}`}
-                            >
-                                <option value="Todos">Status</option>
-                                {statusOptions.map(s => <option key={s} value={s}>{s}</option>)}
-                            </select>
-                            <select
-                                value={filtroPrioridade}
-                                onChange={e => setFiltroPrioridade(e.target.value)}
-                                className={`px-2 py-1.5 md:px-3 md:py-2 rounded-xl text-[10px] md:text-xs outline-none transition-all font-bold border ${filtroPrioridade !== 'Todas' ? 'bg-rose-600 border-rose-600 text-white' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300'}`}
-                            >
-                                <option value="Todas">Prioridade</option>
-                                {prioridadeOptions.map(p => <option key={p} value={p}>{p}</option>)}
-                            </select>
-                            <select
-                                value={filtroOrigem}
-                                onChange={e => setFiltroOrigem(e.target.value)}
-                                className={`px-2 py-1.5 md:px-3 md:py-2 rounded-xl text-[10px] md:text-xs outline-none transition-all font-bold border ${filtroOrigem !== 'Todos' ? 'bg-navy-dark text-white' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300'}`}
-                            >
-                                <option value="Todos">Deputado</option>
-                                <option value="Alê Portela">Alê</option>
-                                <option value="Lincoln Portela">Lincoln</option>
-                            </select>
-                            <select
-                                value={filtroMunicipio}
-                                onChange={e => setFiltroMunicipio(e.target.value)}
-                                className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-[10px] md:text-xs px-2 py-1.5 md:px-3 md:py-2 outline-none focus:ring-2 focus:ring-turquoise/30 truncate"
-                            >
-                                {municipiosList.map(m => <option key={m} value={m}>{m === 'Todos' ? 'Município' : m}</option>)}
-                            </select>
+                            <div className="relative group mt-1">
+  <select
+    value={filtroStatus}
+    onChange={e => setFiltroStatus(e.target.value)}
+    className={`w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 rounded-xl text-sm appearance-none cursor-pointer outline-none focus:ring-2 focus:ring-indigo-500/20 ${filtroStatus !== 'Todos' ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300'}`}
+  >
+    <option value="Todos">Status</option>
+    {statusOptions.map(s => <option key={s} value={s}>{s}</option>)}
+  </select>
+  <span className="material-symbols-outlined absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-[20px] pointer-events-none">keyboard_arrow_down</span>
+</div>
+                            <div className="relative group mt-1">
+  <select
+    value={filtroPrioridade}
+    onChange={e => setFiltroPrioridade(e.target.value)}
+    className={`w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 rounded-xl text-sm appearance-none cursor-pointer outline-none focus:ring-2 focus:ring-indigo-500/20 ${filtroPrioridade !== 'Todas' ? 'bg-rose-600 border-rose-600 text-white' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300'}`}
+  >
+    <option value="Todas">Prioridade</option>
+    {prioridadeOptions.map(p => <option key={p} value={p}>{p}</option>)}
+  </select>
+  <span className="material-symbols-outlined absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-[20px] pointer-events-none">keyboard_arrow_down</span>
+</div>
+                            <div className="relative group mt-1">
+  <select
+    value={filtroOrigem}
+    onChange={e => setFiltroOrigem(e.target.value)}
+    className={`w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 rounded-xl text-sm appearance-none cursor-pointer outline-none focus:ring-2 focus:ring-indigo-500/20 ${filtroOrigem !== 'Todos' ? 'bg-navy-dark text-white' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300'}`}
+  >
+    <option value="Todos">Deputado</option>
+    <option value="Alê Portela">Alê</option>
+    <option value="Lincoln Portela">Lincoln</option>
+  </select>
+  <span className="material-symbols-outlined absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-[20px] pointer-events-none">keyboard_arrow_down</span>
+</div>
+                            <div className="relative group mt-1">
+  <select
+    value={filtroMunicipio}
+    onChange={e => setFiltroMunicipio(e.target.value)}
+    className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 rounded-xl text-sm appearance-none cursor-pointer outline-none focus:ring-2 focus:ring-indigo-500/20 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 truncate"
+  >
+    {municipiosList.map(m => <option key={m} value={m}>{m === 'Todos' ? 'Município' : m}</option>)}
+  </select>
+  <span className="material-symbols-outlined absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-[20px] pointer-events-none">keyboard_arrow_down</span>
+</div>
                         </div>
                     </div>
                 </div>
@@ -351,32 +363,41 @@ const DemandasPage: React.FC<{ navigateTo: (page: string, params?: any) => void 
                                             <p className="font-bold text-navy-dark dark:text-white text-[11px] md:text-xs">{d.municipio_nome}</p>
                                         </td>
                                         <td className="px-4 md:px-6 py-2 md:py-3">
-                                            <select
-                                                value={editForm.tipo || ''}
-                                                onChange={e => setEditForm({ ...editForm, tipo: e.target.value })}
-                                                className="w-full px-2 py-1.5 border border-slate-200 dark:border-slate-600 rounded-lg text-[10px] md:text-xs bg-white dark:bg-slate-800 outline-none focus:ring-2 focus:ring-turquoise/30"
-                                            >
-                                                {tipoOptions.map(t => <option key={t} value={t}>{t}</option>)}
-                                            </select>
+                                            <div className="relative group mt-1">
+  <select
+    value={editForm.tipo || ''}
+    onChange={e => setEditForm({ ...editForm, tipo: e.target.value })}
+    className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 rounded-xl text-sm appearance-none cursor-pointer outline-none focus:ring-2 focus:ring-indigo-500/20"
+  >
+    {tipoOptions.map(t => <option key={t} value={t}>{t}</option>)}
+  </select>
+  <span className="material-symbols-outlined absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-[20px] pointer-events-none">keyboard_arrow_down</span>
+</div>
                                         </td>
                                         <td className="px-4 md:px-6 py-2 md:py-3 text-center">
-                                            <select
-                                                value={editForm.prioridade || 'Média'}
-                                                onChange={e => setEditForm({ ...editForm, prioridade: e.target.value })}
-                                                className="px-2 py-1.5 border border-slate-200 dark:border-slate-600 rounded-lg text-[10px] md:text-xs bg-white dark:bg-slate-800 outline-none focus:ring-2 focus:ring-turquoise/30"
-                                            >
-                                                {prioridadeOptions.map(p => <option key={p} value={p}>{p}</option>)}
-                                            </select>
+                                            <div className="relative group mt-1">
+  <select
+    value={editForm.prioridade || 'Média'}
+    onChange={e => setEditForm({ ...editForm, prioridade: e.target.value })}
+    className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 rounded-xl text-sm appearance-none cursor-pointer outline-none focus:ring-2 focus:ring-indigo-500/20"
+  >
+    {prioridadeOptions.map(p => <option key={p} value={p}>{p}</option>)}
+  </select>
+  <span className="material-symbols-outlined absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-[20px] pointer-events-none">keyboard_arrow_down</span>
+</div>
                                         </td>
                                         <td className="px-4 md:px-6 py-2 md:py-3 text-center">
-                                            <select
-                                                value={editForm.origem || ''}
-                                                onChange={e => setEditForm({ ...editForm, origem: e.target.value })}
-                                                className="px-2 py-1.5 border border-slate-200 dark:border-slate-600 rounded-lg text-[10px] md:text-xs bg-white dark:bg-slate-800 outline-none focus:ring-2 focus:ring-turquoise/30"
-                                            >
-                                                <option value="Alê Portela">Alê</option>
-                                                <option value="Lincoln Portela">Lincoln</option>
-                                            </select>
+                                            <div className="relative group mt-1">
+  <select
+    value={editForm.origem || ''}
+    onChange={e => setEditForm({ ...editForm, origem: e.target.value })}
+    className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 rounded-xl text-sm appearance-none cursor-pointer outline-none focus:ring-2 focus:ring-indigo-500/20"
+  >
+    <option value="Alê Portela">Alê</option>
+    <option value="Lincoln Portela">Lincoln</option>
+  </select>
+  <span className="material-symbols-outlined absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-[20px] pointer-events-none">keyboard_arrow_down</span>
+</div>
                                         </td>
                                         <td className="px-4 md:px-6 py-2 md:py-3">
                                             <input
@@ -387,13 +408,16 @@ const DemandasPage: React.FC<{ navigateTo: (page: string, params?: any) => void 
                                             />
                                         </td>
                                         <td className="px-4 md:px-6 py-2 md:py-3 text-center">
-                                            <select
-                                                value={editForm.status || 'Em Análise'}
-                                                onChange={e => setEditForm({ ...editForm, status: e.target.value })}
-                                                className="px-2 py-1.5 border border-slate-200 dark:border-slate-600 rounded-lg text-[10px] md:text-xs bg-white dark:bg-slate-800 outline-none focus:ring-2 focus:ring-turquoise/30"
-                                            >
-                                                {statusOptions.map(s => <option key={s} value={s}>{s}</option>)}
-                                            </select>
+          <div className="relative group mt-1">
+            <select
+              value={editForm.status || 'Em Análise'}
+              onChange={e => setEditForm({ ...editForm, status: e.target.value })}
+              className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 rounded-xl text-sm appearance-none cursor-pointer outline-none focus:ring-2 focus:ring-primary/20"
+            >
+              {statusOptions.map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
+            <span className="material-symbols-outlined absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-[20px] pointer-events-none">keyboard_arrow_down</span>
+          </div>
                                         </td>
                                         <td className="px-4 md:px-6 py-2 md:py-3 text-center">
                                             <div className="flex items-center justify-center gap-1">
@@ -506,18 +530,21 @@ const DemandasPage: React.FC<{ navigateTo: (page: string, params?: any) => void 
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="col-span-2">
                                     <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1.5">Município <span className="text-rose-500">*</span></label>
-                                    <select
-                                        ref={municipioRef}
-                                        value={novaForm.municipio_id}
-                                        onChange={e => {
-                                            setNovaForm({ ...novaForm, municipio_id: e.target.value });
-                                            if (formErrors.includes('municipio')) setFormErrors(prev => prev.filter(f => f !== 'municipio'));
-                                        }}
-                                        className={`w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-900 border ${formErrors.includes('municipio') ? 'border-rose-500 ring-2 ring-rose-500/10' : 'border-slate-200 dark:border-slate-700'} rounded-xl text-sm outline-none focus:ring-2 focus:ring-turquoise/30 font-medium`}
-                                    >
-                                        <option value="">Selecione um município...</option>
-                                        {municipios.sort((a, b) => a.nome.localeCompare(b.nome)).map(m => <option key={m.id} value={m.id}>{m.nome}</option>)}
-                                    </select>
+                                    <div className="relative group mt-1">
+  <select
+    ref={municipioRef}
+    value={novaForm.municipio_id}
+    onChange={e => {
+      setNovaForm({ ...novaForm, municipio_id: e.target.value });
+      if (formErrors.includes('municipio')) setFormErrors(prev => prev.filter(f => f !== 'municipio'));
+    }}
+    className={`w-full p-2.5 bg-slate-50 dark:bg-slate-900 border ${formErrors.includes('municipio') ? 'border-rose-500 ring-2 ring-rose-500/10' : 'border-slate-200 dark:border-slate-700'} rounded-xl text-sm outline-none focus:ring-2 focus:ring-turquoise/30 font-medium`}
+  >
+    <option value="">Selecione um município...</option>
+    {municipios.sort((a, b) => a.nome.localeCompare(b.nome)).map(m => <option key={m.id} value={m.id}>{m.nome}</option>)}
+  </select>
+  <span className="material-symbols-outlined absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-[20px] pointer-events-none">keyboard_arrow_down</span>
+</div>
                                 </div>
                                 <div className="col-span-2">
                                     <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1.5">Título <span className="text-rose-500">*</span></label>
@@ -547,22 +574,43 @@ const DemandasPage: React.FC<{ navigateTo: (page: string, params?: any) => void 
                                 </div>
                                 <div>
                                     <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1.5">Tipo</label>
-                                    <select value={novaForm.tipo} onChange={e => setNovaForm({ ...novaForm, tipo: e.target.value })} className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:ring-2 focus:ring-turquoise/30">
-                                        {tipoOptions.map(t => <option key={t} value={t}>{t}</option>)}
-                                    </select>
+                                    <div className="relative group mt-1">
+  <select
+    value={novaForm.tipo}
+    onChange={e => setNovaForm({ ...novaForm, tipo: e.target.value })}
+    className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm appearance-none cursor-pointer outline-none focus:ring-2 focus:ring-indigo-500/20"
+  >
+    {tipoOptions.map(t => <option key={t} value={t}>{t}</option>)}
+  </select>
+  <span className="material-symbols-outlined absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-[20px] pointer-events-none">keyboard_arrow_down</span>
+</div>
                                 </div>
                                 <div>
                                     <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1.5">Prioridade</label>
-                                    <select value={novaForm.prioridade} onChange={e => setNovaForm({ ...novaForm, prioridade: e.target.value })} className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:ring-2 focus:ring-turquoise/30">
-                                        {prioridadeOptions.map(p => <option key={p} value={p}>{p}</option>)}
-                                    </select>
+                                    <div className="relative group mt-1">
+  <select
+    value={novaForm.prioridade}
+    onChange={e => setNovaForm({ ...novaForm, prioridade: e.target.value })}
+    className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm appearance-none cursor-pointer outline-none focus:ring-2 focus:ring-indigo-500/20"
+  >
+    {prioridadeOptions.map(p => <option key={p} value={p}>{p}</option>)}
+  </select>
+  <span className="material-symbols-outlined absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-[20px] pointer-events-none">keyboard_arrow_down</span>
+</div>
                                 </div>
                                 <div>
                                     <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1.5">Origem</label>
-                                    <select value={novaForm.origem} onChange={e => setNovaForm({ ...novaForm, origem: e.target.value })} className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:ring-2 focus:ring-turquoise/30">
-                                        <option value="Alê Portela">Alê Portela</option>
-                                        <option value="Lincoln Portela">Lincoln Portela</option>
-                                    </select>
+                                    <div className="relative group mt-1">
+  <select
+    value={novaForm.origem}
+    onChange={e => setNovaForm({ ...novaForm, origem: e.target.value })}
+    className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm appearance-none cursor-pointer outline-none focus:ring-2 focus:ring-indigo-500/20"
+  >
+    <option value="Alê Portela">Alê Portela</option>
+    <option value="Lincoln Portela">Lincoln Portela</option>
+  </select>
+  <span className="material-symbols-outlined absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-[20px] pointer-events-none">keyboard_arrow_down</span>
+</div>
                                 </div>
                                 <div>
                                     <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1.5">Prazo</label>

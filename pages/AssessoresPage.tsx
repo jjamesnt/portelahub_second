@@ -562,21 +562,24 @@ const AssessoresPage: React.FC<AssessoresPageProps> = ({ navigateTo }) => {
                                 <div className="grid grid-cols-2 gap-3">
                                     <div>
                                         <label className="text-xs font-bold text-slate-500 uppercase">Cargo <span className="text-rose-500">*</span></label>
-                                        <select
-                                            ref={cargoRef}
-                                            value={editingAssessor.cargo || ''}
-                                            onChange={e => {
-                                                setEditingAssessor({ ...editingAssessor, cargo: e.target.value as any });
-                                                if (formErrors.includes("cargo")) setFormErrors(prev => prev.filter(f => f !== "cargo"));
-                                            }}
-                                            className={`w-full mt-1 p-2.5 border rounded-xl bg-slate-50 dark:bg-slate-900/50 ${formErrors.includes("cargo") ? 'border-rose-500 ring-2 ring-rose-500/10' : 'border-slate-200 dark:border-slate-700'} text-sm focus:ring-2 focus:ring-turquoise/20 outline-none transition-all`}
-                                        >
-                                            <option value="">Selecione...</option>
-                                            <option>Assessor</option>
-                                            <option>Assessor Regional</option>
-                                            <option>Coordenador Político</option>
-                                            <option>Chefe de Gabinete</option>
-                                        </select>
+                                        <div className="relative group mt-1">
+                                            <select
+                                                ref={cargoRef}
+                                                value={editingAssessor.cargo || ''}
+                                                onChange={e => {
+                                                    setEditingAssessor({ ...editingAssessor, cargo: e.target.value as any });
+                                                    if (formErrors.includes("cargo")) setFormErrors(prev => prev.filter(f => f !== "cargo"));
+                                                }}
+                                                className={`w-full p-2.5 pr-10 border rounded-xl bg-slate-50 dark:bg-slate-900/50 ${formErrors.includes("cargo") ? 'border-rose-500 ring-2 ring-rose-500/10' : 'border-slate-200 dark:border-slate-700'} text-sm appearance-none cursor-pointer outline-none focus:ring-2 focus:ring-turquoise/20 transition-all`}
+                                            >
+                                                <option value="">Selecione...</option>
+                                                <option>Assessor</option>
+                                                <option>Assessor Regional</option>
+                                                <option>Coordenador Político</option>
+                                                <option>Chefe de Gabinete</option>
+                                            </select>
+                                            <span className="material-symbols-outlined absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-[20px] pointer-events-none">keyboard_arrow_down</span>
+                                        </div>
                                     </div>
                                     <div>
                                         <label className="text-xs font-bold text-slate-500 uppercase">Região <span className="text-rose-500">*</span></label>
@@ -595,19 +598,22 @@ const AssessoresPage: React.FC<AssessoresPageProps> = ({ navigateTo }) => {
                                 <div className="grid grid-cols-2 gap-3">
                                     <div>
                                         <label className="text-xs font-bold text-slate-500 uppercase">Mandato <span className="text-rose-500">*</span></label>
-                                        <select
-                                            ref={mandatoRef}
-                                            value={editingAssessor.origem || ''}
-                                            onChange={e => {
-                                                setEditingAssessor({ ...editingAssessor, origem: e.target.value as any });
-                                                if (formErrors.includes("mandato")) setFormErrors(prev => prev.filter(f => f !== "mandato"));
-                                            }}
-                                            className={`w-full mt-1 p-2.5 border rounded-xl bg-slate-50 dark:bg-slate-900/50 ${formErrors.includes("mandato") ? 'border-rose-500 ring-2 ring-rose-500/10' : 'border-slate-200 dark:border-slate-700'} text-sm focus:ring-2 focus:ring-turquoise/20 outline-none transition-all`}
-                                        >
-                                            <option value="">Selecione...</option>
-                                            <option>Alê Portela</option>
-                                            <option>Lincoln Portela</option>
-                                        </select>
+                                        <div className="relative group mt-1">
+                                            <select
+                                                ref={mandatoRef}
+                                                value={editingAssessor.origem || ''}
+                                                onChange={e => {
+                                                    setEditingAssessor({ ...editingAssessor, origem: e.target.value as any });
+                                                    if (formErrors.includes("mandato")) setFormErrors(prev => prev.filter(f => f !== "mandato"));
+                                                }}
+                                                className={`w-full p-2.5 pr-10 border rounded-xl bg-slate-50 dark:bg-slate-900/50 ${formErrors.includes("mandato") ? 'border-rose-500 ring-2 ring-rose-500/10' : 'border-slate-200 dark:border-slate-700'} text-sm appearance-none cursor-pointer outline-none focus:ring-2 focus:ring-turquoise/20 transition-all`}
+                                            >
+                                                <option value="">Selecione...</option>
+                                                <option>Alê Portela</option>
+                                                <option>Lincoln Portela</option>
+                                            </select>
+                                            <span className="material-symbols-outlined absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-[20px] pointer-events-none">keyboard_arrow_down</span>
+                                        </div>
                                     </div>
                                     <div>
                                         <label className="text-xs font-bold text-slate-500 uppercase">Email <span className="text-rose-500">*</span></label>

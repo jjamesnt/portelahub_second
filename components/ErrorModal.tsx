@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useContext } from 'react';
+import { AppContext } from '../context/AppContext';
 
 interface ErrorModalProps {
     isOpen: boolean;
@@ -17,10 +18,16 @@ const ErrorModal: React.FC<ErrorModalProps> = ({
 }) => {
     if (!isOpen) return null;
 
+    const context = useContext(AppContext);
+
     const copyToClipboard = () => {
         if (technicalDetails) {
             navigator.clipboard.writeText(technicalDetails);
-            alert("Detalhes técnicos copiados!");
+            if (context) {
+                context.showToast("Detalhes técnicos copiados!", "success");
+            } else {
+                alert("Detalhes técnicos copiados!");
+            }
         }
     };
 

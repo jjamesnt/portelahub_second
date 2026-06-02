@@ -5,6 +5,7 @@ import { useAppContext } from '../hooks/useAppContext';
 interface SidebarProps {
     activePage: string;
     setActivePage: (page: string, params?: any) => void;
+    onSyncClick?: () => void;
 }
 
 export const navItems = [
@@ -19,7 +20,7 @@ export const navItems = [
     { id: 'configuracoes', label: 'Configurações', icon: 'settings' },
 ];
 
-const Sidebar: React.FC<SidebarProps> = ({ activePage, setActivePage }) => {
+const Sidebar: React.FC<SidebarProps> = ({ activePage, setActivePage, onSyncClick }) => {
     const { selectedMandato, isSidebarOpen, toggleSidebar, profile, signOut, rolePermissions } = useAppContext();
 
     const role = profile?.role || 'user';
@@ -157,10 +158,13 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, setActivePage }) => {
                                 <span className="text-[9px] font-bold text-turquoise uppercase tracking-wider text-center leading-tight">Nova Liderança</span>
                             </button>
                         )}
-                        {allowedItems.includes('Municípios') && (
-                            <button className="flex flex-col items-center justify-center p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-all border border-white/10 group">
-                                <span className="material-symbols-outlined text-turquoise mb-1 text-xl group-hover:scale-110 transition-transform">upload_file</span>
-                                <span className="text-[9px] font-bold text-turquoise uppercase tracking-wider text-center leading-tight">Importar CSV</span>
+                        {profile?.role === 'master' && onSyncClick && (
+                            <button 
+                                onClick={onSyncClick}
+                                className="flex flex-col items-center justify-center p-3 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 transition-all border border-indigo-500/30 group"
+                            >
+                                <span className="material-symbols-outlined text-indigo-400 mb-1 text-xl group-hover:scale-110 transition-transform">table_chart</span>
+                                <span className="text-[9px] font-bold text-indigo-400 uppercase tracking-wider text-center leading-tight">Importar Dados</span>
                             </button>
                         )}
                         {(allowedItems.includes('Recursos') || allowedItems.includes('Demandas')) && (

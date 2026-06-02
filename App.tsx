@@ -4,20 +4,22 @@ import { AppProvider } from './context/AppContext';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import Loader from './components/Loader';
-import MunicipioDetalhesPage from './pages/MunicipioDetalhesPage';
-import DashboardPage from './pages/DashboardPage';
-import MunicipiosPage from './pages/MunicipiosPage';
-import LiderancasPage from './pages/LiderancasPage';
-import AssessoresPage from './pages/AssessoresPage';
-import AgendaPage from './pages/AgendaPage';
-import ConfiguracoesPage from './pages/ConfiguracoesPage';
-import GestaoRecursosPage from './pages/GestaoRecursosPage';
-import DemandasPage from './pages/DemandasPage';
-import DemandaMunicipioPage from './pages/DemandaMunicipioPage';
-import RecursosRelatorioPage from './pages/RecursosRelatorioPage';
-import ApoiadoresPage from './pages/ApoiadoresPage';
-import ApoiadorPerfilPage from './pages/ApoiadorPerfilPage';
+const MunicipioDetalhesPage = React.lazy(() => import('./pages/MunicipioDetalhesPage'));
+const DashboardPage = React.lazy(() => import('./pages/DashboardPage'));
+const MunicipiosPage = React.lazy(() => import('./pages/MunicipiosPage'));
+const LiderancasPage = React.lazy(() => import('./pages/LiderancasPage'));
+const AssessoresPage = React.lazy(() => import('./pages/AssessoresPage'));
+const AgendaPage = React.lazy(() => import('./pages/AgendaPage'));
+const ConfiguracoesPage = React.lazy(() => import('./pages/ConfiguracoesPage'));
+const GestaoRecursosPage = React.lazy(() => import('./pages/GestaoRecursosPage'));
+const DemandasPage = React.lazy(() => import('./pages/DemandasPage'));
+const DemandaMunicipioPage = React.lazy(() => import('./pages/DemandaMunicipioPage'));
+const RecursosRelatorioPage = React.lazy(() => import('./pages/RecursosRelatorioPage'));
+const ApoiadoresPage = React.lazy(() => import('./pages/ApoiadoresPage'));
+const ApoiadorPerfilPage = React.lazy(() => import('./pages/ApoiadorPerfilPage'));
 
+import SyncSpreadsheetModal from './components/SyncSpreadsheetModal';
+import ErrorBoundary from './components/ErrorBoundary';
 import LoginPage from './pages/LoginPage';
 import { AppContext } from './context/AppContext';
 import { syncSpreadsheetData } from './services/api';
@@ -54,8 +56,9 @@ const AppContent: React.FC = () => {
   });
 
   if (!context) return null;
-  const { user, profile, isLoading, rolePermissions } = context;
+  const { user, profile, isLoading, rolePermissions, toast, hideToast } = context;
   const hasSynced = useRef(false);
+  const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
 
   useEffect(() => {
     const initSync = async () => {
@@ -242,18 +245,113 @@ const AppContent: React.FC = () => {
 
   // Se estiver tudo OK (active), renderiza o app normal
   if (currentPage.page === 'RecursosRelatorio') {
-    return <main className="min-h-screen bg-white">{renderContent()}</main>;
+    return (
+      <main className="min-h-screen bg-white">
+        <ErrorBoundary
+          key={currentPage.page}
+          mode="modular"
+          onResetError={() => navigateTo('Dashboard')}
+        >
+          <React.Suspense fallback={<div className="h-full flex items-center justify-center p-12"><Loader /></div>}>
+            {renderContent()}
+          </React.Suspense>
+        </ErrorBoundary>
+        
+        {/* Toast em Relatório */}
+        {toast?.isOpen && (
+          <div className="fixed top-6 right-6 z-[10005] animate-in slide-in-from-top-12 md:slide-in-from-right-12 fade-in duration-300">
+            <div className={`flex items-center gap-3 pl-4 pr-5 py-3.5 bg-white/85 dark:bg-slate-900/85 backdrop-blur-md border rounded-2xl shadow-xl shadow-slate-200/50 dark:shadow-none max-w-sm ${
+              toast.type === 'success' ? 'border-emerald-500/30 text-emerald-800 dark:text-emerald-300' :
+              toast.type === 'error' ? 'border-rose-500/30 text-rose-800 dark:text-rose-300' :
+              'border-sky-500/30 text-sky-800 dark:text-sky-300'
+            }`}>
+              <span className={`material-symbols-outlined text-[22px] shrink-0 ${
+                toast.type === 'success' ? 'text-emerald-500' :
+                toast.type === 'error' ? 'text-rose-500' :
+                'text-sky-500'
+              }`}>
+                {toast.type === 'success' ? 'check_circle' :
+                 toast.type === 'error' ? 'error' : 'info'}
+              </span>
+              <p className="text-xs font-bold leading-normal text-slate-700 dark:text-slate-200">
+                {toast.message}
+              </p>
+              <button 
+                onClick={hideToast}
+                className="ml-2 p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 shrink-0 transition-colors"
+              >
+                <span className="material-symbols-outlined text-[16px]">close</span>
+              </button>
+            </div>
+          </div>
+        )}
+      </main>
+    );
   }
 
   return (
     <div className="flex h-screen-dynamic w-full overflow-hidden">
-      <Sidebar activePage={currentPage.page} setActivePage={(page, params) => navigateTo(page, params)} />
+      <Sidebar 
+        activePage={currentPage.page} 
+        setActivePage={(page, params) => navigateTo(page, params)} 
+        onSyncClick={() => setIsSyncModalOpen(true)}
+      />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden h-full">
         <Header />
         <main className="flex-1 overflow-y-auto overflow-x-hidden bg-background-light dark:bg-background-dark w-full px-safe-left px-safe-right">
-          {renderContent()}
+          <ErrorBoundary
+            key={currentPage.page}
+            mode="modular"
+            onResetError={() => navigateTo('Dashboard')}
+          >
+            <React.Suspense fallback={<div className="h-full flex items-center justify-center p-12"><Loader /></div>}>
+              {renderContent()}
+            </React.Suspense>
+          </ErrorBoundary>
         </main>
       </div>
+
+      {/* Toast Notification Premium */}
+      {toast?.isOpen && (
+        <div className="fixed top-6 right-6 z-[10005] animate-in slide-in-from-top-12 md:slide-in-from-right-12 fade-in duration-300">
+          <div className={`flex items-center gap-3 pl-4 pr-5 py-3.5 bg-white/85 dark:bg-slate-900/85 backdrop-blur-md border rounded-2xl shadow-xl shadow-slate-200/50 dark:shadow-none max-w-sm ${
+            toast.type === 'success' ? 'border-emerald-500/30 text-emerald-800 dark:text-emerald-300' :
+            toast.type === 'error' ? 'border-rose-500/30 text-rose-800 dark:text-rose-300' :
+            'border-sky-500/30 text-sky-800 dark:text-sky-300'
+          }`}>
+            <span className={`material-symbols-outlined text-[22px] shrink-0 ${
+              toast.type === 'success' ? 'text-emerald-500' :
+              toast.type === 'error' ? 'text-rose-500' :
+              'text-sky-500'
+            }`}>
+              {toast.type === 'success' ? 'check_circle' :
+               toast.type === 'error' ? 'error' : 'info'}
+            </span>
+            <p className="text-xs font-bold leading-normal text-slate-700 dark:text-slate-200">
+              {toast.message}
+            </p>
+            <button 
+              onClick={hideToast}
+              className="ml-2 p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 shrink-0 transition-colors"
+            >
+              <span className="material-symbols-outlined text-[16px]">close</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {profile?.role === 'master' && (
+        <SyncSpreadsheetModal 
+          isOpen={isSyncModalOpen} 
+          onClose={() => setIsSyncModalOpen(false)} 
+          onSuccess={() => {
+            // Recarregar os dados na tela corrente
+            if (currentPage.page === 'Apoiadores' || currentPage.page === 'Municípios') {
+              navigateTo(currentPage.page, currentPage.params);
+            }
+          }}
+        />
+      )}
     </div>
   );
 };

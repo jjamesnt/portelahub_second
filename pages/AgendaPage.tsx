@@ -99,33 +99,40 @@ const AgendaPage: React.FC<AgendaPageProps> = ({ navigateTo, params }) => {
         }
     };
 
-    const handleInstantApprove = async (s: SolicitacaoAgenda) => {
-        if (!confirm(`Deseja aprovar instantaneamente a solicitação "${s.titulo}"?`)) return;
+    const handleInstantApprove = (s: SolicitacaoAgenda) => {
+        setConfirmConfig({
+            isOpen: true,
+            title: 'Aprovar Instantaneamente',
+            message: `Deseja aprovar instantaneamente a solicitação "${s.titulo}"?`,
+            isDanger: false,
+            onConfirm: async () => {
+                setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+                try {
+                    setIsLoading(true);
+                    const payload = {
+                        titulo: s.titulo,
+                        data: s.data ? s.data.split('T')[0].split(' ')[0] : '',
+                        hora: s.hora_inicio || '',
+                        tipo: (s.tipo_evento?.includes('Evento') ? 'Evento Público' : 
+                              s.tipo_evento?.includes('Reunião') ? 'Reunião' : 'Reunião') as any,
+                        origem: (s.origem.includes('Alê') ? 'Alê Portela' : 
+                                s.origem.includes('Lincoln') ? 'Lincoln Portela' : 'Marilda Portela') as any,
+                        privacidade: 'Público' as any,
+                        local: s.local || '',
+                        descricao: s.descricao || ''
+                    };
 
-        try {
-            setIsLoading(true);
-            const payload = {
-                titulo: s.titulo,
-                data: s.data ? s.data.split('T')[0].split(' ')[0] : '',
-                hora: s.hora_inicio || '',
-                tipo: (s.tipo_evento?.includes('Evento') ? 'Evento Público' : 
-                      s.tipo_evento?.includes('Reunião') ? 'Reunião' : 'Reunião') as any,
-                origem: (s.origem.includes('Alê') ? 'Alê Portela' : 
-                        s.origem.includes('Lincoln') ? 'Lincoln Portela' : 'Marilda Portela') as any,
-                privacidade: 'Público' as any,
-                local: s.local || '',
-                descricao: s.descricao || ''
-            };
-
-            await approveSolicitacao(s.id, payload);
-            await fetchData();
-            alert('Solicitação aprovada com sucesso!');
-        } catch (err) {
-            console.error('Erro na aprovação instantânea:', err);
-            alert('Falha ao aprovar solicitação.');
-        } finally {
-            setIsLoading(false);
-        }
+                    await approveSolicitacao(s.id, payload);
+                    await fetchData();
+                    context?.showToast('Solicitação aprovada com sucesso!', 'success');
+                } catch (err) {
+                    console.error('Erro na aprovação instantânea:', err);
+                    context?.showToast('Falha ao aprovar solicitação.', 'error');
+                } finally {
+                    setIsLoading(false);
+                }
+            }
+        });
     };
 
     const handleUpdateStatus = async (id: string, newStatus: 'Aprovado' | 'Recusado') => {
@@ -165,19 +172,32 @@ const AgendaPage: React.FC<AgendaPageProps> = ({ navigateTo, params }) => {
         }
     };
 
-    const handleUndoApprove = async (id: string) => {
-        if (!window.confirm('Deseja desaprovar esta solicitação? O evento será removido da agenda e o pedido voltará para a fila de pendentes.')) return;
-        try {
-            await undoApproveSolicitacao(id);
-            const [solicData, eventData] = await Promise.all([
-                getSolicitacoesAgenda(),
-                getAgendaEventos()
-            ]);
-            setSolicitacoes(solicData);
-            setEventos(eventData);
-        } catch (err: any) {
-            setError(err.message || 'Erro ao desaprovar solicitação');
-        }
+    const handleUndoApprove = (id: string) => {
+        setConfirmConfig({
+            isOpen: true,
+            title: 'Desaprovar Solicitação',
+            message: 'Deseja desaprovar esta solicitação? O evento será removido da agenda e o pedido voltará para a fila de pendentes.',
+            isDanger: true,
+            onConfirm: async () => {
+                setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+                try {
+                    setIsLoading(true);
+                    await undoApproveSolicitacao(id);
+                    const [solicData, eventData] = await Promise.all([
+                        getSolicitacoesAgenda(),
+                        getAgendaEventos()
+                    ]);
+                    setSolicitacoes(solicData);
+                    setEventos(eventData);
+                    context?.showToast('Solicitação desaprovada com sucesso.', 'success');
+                } catch (err: any) {
+                    console.error('Erro ao desaprovar solicitação:', err);
+                    context?.showToast(err.message || 'Erro ao desaprovar solicitação.', 'error');
+                } finally {
+                    setIsLoading(false);
+                }
+            }
+        });
     };
 
     const getTimeAgo = (dateStr?: string) => {

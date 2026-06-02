@@ -1,6 +1,6 @@
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || '';
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
-const API_URL = `${SUPABASE_URL}/rest/v1`;
+const API_URL = import.meta.env.DEV ? '/supabase-rest' : `${SUPABASE_URL}/rest/v1`;
 
 class ApiClient {
   private cache = new Map<string, { data: any, timestamp: number }>();
@@ -77,6 +77,65 @@ class ApiClient {
       }
     } else if (cleanPath === '/auth/me') {
       url = `${SUPABASE_URL}/auth/v1/user`;
+    } else if (cleanPath === '/sync/bulk-municipios' && bodyObj && bodyObj.data) {
+      console.log('[Sync Interceptor] Processing bulk municipios update with empty value handling...');
+      const cleanVal = (val: any) => (val === undefined || val === null || (typeof val === 'string' && val.trim() === '')) ? null : val;
+      const updates = bodyObj.data;
+      for (const item of updates) {
+        await this.request(`/municipios?id=eq.${item.id}`, {
+          method: 'PATCH',
+          body: JSON.stringify({
+            status_prefeito: cleanVal(item.status_prefeito),
+            votacao_ale: item.votacao_ale || 0,
+            votacao_lincoln: item.votacao_lincoln || 0,
+            idene: !!item.idene,
+            lincoln_fechado: !!item.lincoln_fechado,
+            status_atendimento: cleanVal(item.status_atendimento),
+            tipo_atendimento: cleanVal(item.tipo_atendimento),
+            principal_demanda: cleanVal(item.principal_demanda),
+            sugestao_sedese: cleanVal(item.sugestao_sedese),
+            observacao: cleanVal(item.observacao),
+            assessor_id: cleanVal(item.assessor_id)
+          })
+        });
+      }
+      return { success: true };
+    } else if (cleanPath === '/sync/bulk-apoiadores' && bodyObj && bodyObj.data) {
+      console.log('[Sync Interceptor] Processing bulk supporters update with empty value handling...');
+      const cleanVal = (val: any) => (val === undefined || val === null || (typeof val === 'string' && val.trim() === '')) ? null : val;
+      const updates = bodyObj.data;
+      for (const item of updates) {
+        if (item.id) {
+          await this.request(`/apoiadores?id=eq.${item.id}`, {
+            method: 'PATCH',
+            body: JSON.stringify({
+              municipio_id: cleanVal(item.municipio_id),
+              nome: cleanVal(item.nome),
+              cargo: cleanVal(item.cargo),
+              status_prefeito: cleanVal(item.status_prefeito),
+              votacao_ale: item.votacao_ale || 0,
+              votacao_lincoln: item.votacao_lincoln || 0,
+              principal_demanda: cleanVal(item.principal_demanda),
+              sugestao_sedese: cleanVal(item.sugestao_sedese)
+            })
+          });
+        } else {
+          await this.request('/apoiadores', {
+            method: 'POST',
+            body: JSON.stringify({
+              municipio_id: cleanVal(item.municipio_id),
+              nome: cleanVal(item.nome),
+              cargo: cleanVal(item.cargo),
+              status_prefeito: cleanVal(item.status_prefeito),
+              votacao_ale: item.votacao_ale || 0,
+              votacao_lincoln: item.votacao_lincoln || 0,
+              principal_demanda: cleanVal(item.principal_demanda),
+              sugestao_sedese: cleanVal(item.sugestao_sedese)
+            })
+          });
+        }
+      }
+      return { success: true };
     } else if (cleanPath === '/admin/sql' && bodyObj && bodyObj.sql) {
       const sql = bodyObj.sql.toLowerCase();
       console.log('[SQL Interceptor] Traduzindo query SQL para PostgREST Supabase:', bodyObj.sql);
@@ -157,11 +216,29 @@ class ApiClient {
       // 5. Apoiadores
       if (sql.includes('hub.apoiadores')) {
         try {
-          const data = await this.request('/apoiadores?select=*,municipios(nome,regiao)');
+          const data = await this.request('/apoiadores?select=*,municipios(*)');
+          // Fetch assessores separately for name lookup
+          const assessoresData = await this.request('/assessores?select=id,nome');
+          const assessorLookup: Record<string, string> = {};
+          (assessoresData || []).forEach((a: any) => { assessorLookup[a.id] = a.nome; });
+          
           const mapped = data.map((item: any) => ({
             ...item,
+            municipioId: item.municipio_id || item.municipios?.id,
             municipioNome: item.municipios?.nome || 'Desconhecido',
-            municipioRegiao: item.municipios?.regiao || '-'
+            municipioRegiao: item.municipios?.regiao || '-',
+            statusPrefeito: item.municipios?.status_prefeito,
+            votacaoAle: item.municipios?.votacao_ale,
+            votacaoLincoln: item.municipios?.votacao_lincoln,
+            idene: item.municipios?.idene,
+            lincolnFechado: item.municipios?.lincoln_fechado,
+            statusAtendimento: item.municipios?.status_atendimento,
+            tipoAtendimento: item.municipios?.tipo_atendimento,
+            principalDemanda: item.municipios?.principal_demanda,
+            sugestaoSedese: item.municipios?.sugestao_sedese,
+            observacao: item.municipios?.observacao,
+            assessorId: item.municipios?.assessor_id,
+            assessorNome: item.municipios?.assessor_id ? assessorLookup[item.municipios.assessor_id] || null : null,
           }));
           return { rows: mapped };
         } catch (e) {
@@ -289,84 +366,121 @@ class ApiClient {
       }
     }
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000);
+    const isGet = !options.method || options.method === 'GET';
+    const maxRetries = isGet ? 3 : 1;
+    let attempt = 0;
+    let lastError: any = null;
 
-    try {
-      const response = await fetch(url, {
-        ...options,
-        headers,
-        signal: controller.signal,
-      });
+    while (attempt < maxRetries) {
+      attempt++;
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-      clearTimeout(timeoutId);
-
-      if (response.status === 401 && cleanPath !== '/auth/login') {
-        const tokenSnippet = this.token ? `${this.token.substring(0, 12)}... (len: ${this.token.length})` : 'Nenhum';
-        console.error('[DEBUG 401] Ocorreu um erro 401 não autorizado para a rota:', cleanPath, 'Token:', tokenSnippet);
-        // localStorage.removeItem('portela_hub_token');
-        // window.location.href = '/login';
-        throw new Error(`Não autorizado (401) ao acessar ${cleanPath}. Token: ${tokenSnippet}`);
-      }
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error_description || errorData.message || errorData.error || `Erro na requisição: ${response.status}`);
-      }
-
-      const data = await response.json();
-
-      // Compatibilidade de tokens para Login
-      if (cleanPath === '/auth/login' && data && data.access_token) {
-        data.token = data.access_token;
-      }
-
-      // Complementação de perfil para /auth/me
-      if (cleanPath === '/auth/me' && data) {
-        try {
-          const profileRes = await fetch(`${API_URL}/profiles?id=eq.${data.id}`, {
-            headers: {
-              'apikey': SUPABASE_ANON_KEY,
-              'Authorization': `Bearer ${this.token}`
-            }
-          });
-          if (profileRes.ok) {
-            const profiles = await profileRes.json();
-            if (profiles && profiles[0]) {
-              return profiles[0];
-            }
-          }
-        } catch (e) {
-          console.error('Erro ao buscar perfil complementar:', e);
+      try {
+        if (attempt > 1) {
+          console.warn(`[ApiClient] Tentativa de reconexão ${attempt}/${maxRetries} para a rota: ${cleanPath}...`);
         }
-        return {
-          id: data.id,
-          email: data.email,
-          full_name: data.user_metadata?.full_name || '',
-          phone: data.user_metadata?.phone || '',
-          role: 'user',
-          status: 'active'
-        };
-      }
 
-      let returnData = data;
-      if (cleanPath.startsWith('/users/') && cleanPath !== '/users' && Array.isArray(data)) {
-        returnData = data[0] || null;
-      }
+        const response = await fetch(url, {
+          ...options,
+          headers,
+          signal: controller.signal,
+        });
 
-      // Store in cache if it's a GET
-      if (options.method === 'GET') {
-        this.cache.set(path, { data: returnData, timestamp: Date.now() });
-      }
+        clearTimeout(timeoutId);
 
-      return returnData;
-    } catch (error: any) {
-      clearTimeout(timeoutId);
-      if (error.name === 'AbortError') {
-        throw new Error('A requisição excedeu o tempo limite (10s).');
+        if (response.status === 401 && cleanPath !== '/auth/login') {
+          const tokenSnippet = this.token ? `${this.token.substring(0, 12)}... (len: ${this.token.length})` : 'Nenhum';
+          console.error('[DEBUG 401] Ocorreu um erro 401 não autorizado para a rota:', cleanPath, 'Token:', tokenSnippet);
+          throw new Error(`Não autorizado (401) ao acessar ${cleanPath}. Token: ${tokenSnippet}`);
+        }
+
+        let data: any = {};
+        const responseText = await response.text();
+        if (responseText && responseText.trim().length > 0) {
+          try {
+            data = JSON.parse(responseText);
+          } catch (e) {
+            console.warn('[ApiClient] Failed to parse response as JSON, falling back to text:', e);
+            data = { text: responseText };
+          }
+        }
+
+        if (!response.ok) {
+          if (isGet && response.status >= 500 && attempt < maxRetries) {
+            console.warn(`[ApiClient] Servidor indisponível (${response.status}) na tentativa ${attempt}. Tentando novamente...`);
+            const backoff = attempt * 1000;
+            await new Promise(r => setTimeout(r, backoff));
+            continue;
+          }
+          throw new Error(data.error_description || data.message || data.error || `Erro na requisição: ${response.status}`);
+        }
+
+        // Compatibilidade de tokens para Login
+        if (cleanPath === '/auth/login' && data && data.access_token) {
+          data.token = data.access_token;
+        }
+
+        // Complementação de perfil para /auth/me
+        if (cleanPath === '/auth/me' && data) {
+          try {
+            const profileRes = await fetch(`${API_URL}/profiles?id=eq.${data.id}`, {
+              headers: {
+                'apikey': SUPABASE_ANON_KEY,
+                'Authorization': `Bearer ${this.token}`
+              }
+            });
+            if (profileRes.ok) {
+              const profiles = await profileRes.json();
+              if (profiles && profiles[0]) {
+                return profiles[0];
+              }
+            }
+          } catch (e) {
+            console.error('Erro ao buscar perfil complementar:', e);
+          }
+          return {
+            id: data.id,
+            email: data.email,
+            full_name: data.user_metadata?.full_name || '',
+            phone: data.user_metadata?.phone || '',
+            role: 'user',
+            status: 'active'
+          };
+        }
+
+        let returnData = data;
+        if (cleanPath.startsWith('/users/') && cleanPath !== '/users' && Array.isArray(data)) {
+          returnData = data[0] || null;
+        }
+
+        // Store in cache if it's a GET
+        if (options.method === 'GET') {
+          this.cache.set(path, { data: returnData, timestamp: Date.now() });
+        }
+
+        return returnData;
+
+      } catch (error: any) {
+        clearTimeout(timeoutId);
+        lastError = error;
+
+        const isNetworkError = error instanceof TypeError || error.name === 'AbortError' || error.message?.includes('Network') || error.message?.includes('Failed to fetch');
+
+        if (isGet && isNetworkError && attempt < maxRetries) {
+          const backoff = attempt === 1 ? 500 : 1500;
+          console.warn(`[ApiClient] Falha na tentativa ${attempt} (${error.message || 'Erro de rede'}). Reconectando em ${backoff}ms...`);
+          await new Promise(r => setTimeout(r, backoff));
+        } else {
+          if (error.name === 'AbortError') {
+            throw new Error('A requisição excedeu o tempo limite (10s).');
+          }
+          throw error;
+        }
       }
-      throw error;
     }
+
+    throw lastError || new Error('Falha de rede persistente após múltiplas tentativas de conexão.');
   }
 
   async get<T>(path: string): Promise<T> {
