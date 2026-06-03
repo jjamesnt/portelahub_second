@@ -34,6 +34,7 @@ export default defineConfig(({ mode }) => {
                 }
             }
         },
+        base: '/',
         plugins: [react()],
         resolve: {
             alias: {
