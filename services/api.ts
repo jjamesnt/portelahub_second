@@ -704,7 +704,7 @@ export const getApoiadores = async (): Promise<Apoiador[]> => {
         })) as any[];
     } catch (error) {
         console.error('Erro ao buscar apoiadores via SQL:', error);
-        return [];
+        throw error;
     }
 };
 
