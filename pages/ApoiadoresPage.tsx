@@ -20,6 +20,7 @@ const ApoiadoresPage: React.FC<ApoiadoresPageProps> = ({ navigateTo }) => {
     const [isLoading, setIsLoading] = useState(true);
 
     const [apoiadoresTotal, setApoiadoresTotal] = useState<Apoiador[]>([]);
+    const [debugError, setDebugError] = useState<string | null>(null);
 
     // Filtros
     const [busca, setBusca] = useState('');
@@ -47,19 +48,41 @@ const ApoiadoresPage: React.FC<ApoiadoresPageProps> = ({ navigateTo }) => {
 
         try {
             setIsLoading(true);
-            const [munData, assData, apoData] = await Promise.all([
-                getMunicipiosSimples().catch(() => []),
-                getAssessores().catch(() => []),
-                getApoiadores().catch(() => [])
-            ]);
+            setDebugError(null);
+            
+            let munData: any[] = [];
+            let assData: any[] = [];
+            let apoData: any[] = [];
+
+            try {
+                munData = await getMunicipiosSimples();
+            } catch (err: any) {
+                console.error("Erro getMunicipiosSimples", err);
+                setDebugError(prev => (prev ? prev + "\n" : "") + "Erro Municipios: " + err.message);
+            }
+
+            try {
+                assData = await getAssessores();
+            } catch (err: any) {
+                console.error("Erro getAssessores", err);
+                setDebugError(prev => (prev ? prev + "\n" : "") + "Erro Assessores: " + err.message);
+            }
+
+            try {
+                apoData = await getApoiadores();
+            } catch (err: any) {
+                console.error("Erro getApoiadores", err);
+                setDebugError(prev => (prev ? prev + "\n" : "") + "Erro Apoiadores: " + err.message);
+            }
             
             if (isMounted) {
                 setMunicipios(munData || []);
                 setAssessores(assData || []);
                 setApoiadoresTotal(apoData || []);
             }
-        } catch (err) {
+        } catch (err: any) {
             console.error("Erro ao carregar dados de apoiadores", err);
+            setDebugError(err.message);
         } finally {
             if (isMounted) {
                 setIsLoading(false);
@@ -154,6 +177,12 @@ const ApoiadoresPage: React.FC<ApoiadoresPageProps> = ({ navigateTo }) => {
 
     return (
         <div className="p-4 md:p-8 animate-in fade-in duration-500 pb-24 md:pb-8">
+            {debugError && (
+                <div className="mb-6 p-4 bg-rose-500/10 border border-rose-500/20 text-rose-600 rounded-2xl text-xs font-semibold whitespace-pre-wrap">
+                    ⚠️ Erro detectado no carregamento:
+                    <p className="mt-1 font-mono text-[10px] bg-slate-900/5 dark:bg-slate-900/50 p-2.5 rounded-lg text-slate-700 dark:text-slate-300 select-all">{debugError}</p>
+                </div>
+            )}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6 md:mb-8">
                 <div>
                     <h2 className="text-xl md:text-3xl font-black tracking-tight text-navy-dark dark:text-white">Apoiadores</h2>
