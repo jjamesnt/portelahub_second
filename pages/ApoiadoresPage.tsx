@@ -274,147 +274,143 @@ const ApoiadoresPage: React.FC<ApoiadoresPageProps> = ({ navigateTo }) => {
                     )}
                 </div>
             </div>
-
-            {isLoading ? <Loader /> : apoiadoresFiltrados.length === 0 ? (
-                <div className="py-20 text-center bg-white dark:bg-slate-800 rounded-3xl border border-dashed border-slate-200 dark:border-slate-700">
-                    <div className="size-20 rounded-full bg-slate-50 dark:bg-slate-900/50 flex items-center justify-center mx-auto mb-4">
-                        <span className="material-symbols-outlined text-slate-300 text-5xl">groups</span>
-                    </div>
-                    <h3 className="text-lg font-bold text-slate-600 dark:text-slate-300">Nenhum apoiador encontrado</h3>
-                    <p className="text-slate-400 text-sm max-w-xs mx-auto mt-2">
-                        Não existem apoiadores cadastrados ou os filtros aplicados não retornaram resultados.
-                    </p>
-                    {(busca !== '' || filtroRegiao !== 'Todos' || filtroAssessor !== 'Todos' || filtroStatusPrefeito !== 'Todos') && (
-                        <button 
-                            onClick={clearFilters}
-                            className="mt-6 px-6 py-2 bg-indigo-50 text-indigo-600 rounded-xl text-xs font-black uppercase tracking-wider hover:bg-indigo-600 hover:text-white transition-all border border-indigo-100"
-                        >
-                            Limpar Filtros
-                        </button>
-                    )}
-                </div>
+             {isLoading ? (
+                <Loader />
             ) : viewMode === 'table' ? (
                 <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="w-full text-left border-collapse">
                             <thead>
-                                <tr className="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-700">
-                                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Apoiador</th>
-                                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Cidade / Região</th>
-                                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status Prefeito</th>
-                                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Votos (A/L)</th>
-                                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Responsável</th>
-                                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Atendimento / Demanda</th>
+                                <tr className="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-700 whitespace-nowrap">
+                                    <th className="px-4 py-3.5 text-[9px] font-black text-slate-400 uppercase tracking-widest border-r border-slate-200/50">1. Cidade</th>
+                                    <th className="px-4 py-3.5 text-[9px] font-black text-slate-400 uppercase tracking-widest border-r border-slate-200/50">2. Nome Apoiador</th>
+                                    <th className="px-4 py-3.5 text-[9px] font-black text-slate-400 uppercase tracking-widest border-r border-slate-200/50">3. Status do Prefeito</th>
+                                    <th className="px-4 py-3.5 text-[9px] font-black text-slate-400 uppercase tracking-widest border-r border-slate-200/50">4. Votação Alê</th>
+                                    <th className="px-4 py-3.5 text-[9px] font-black text-slate-400 uppercase tracking-widest border-r border-slate-200/50">5. Votação Lincoln</th>
+                                    <th className="px-4 py-3.5 text-[9px] font-black text-slate-400 uppercase tracking-widest border-r border-slate-200/50">6. IDENE?</th>
+                                    <th className="px-4 py-3.5 text-[9px] font-black text-slate-400 uppercase tracking-widest border-r border-slate-200/50">7. Lincoln Portela Fechado?</th>
+                                    <th className="px-4 py-3.5 text-[9px] font-black text-slate-400 uppercase tracking-widest border-r border-slate-200/50">8. Status de Atendimento</th>
+                                    <th className="px-4 py-3.5 text-[9px] font-black text-slate-400 uppercase tracking-widest border-r border-slate-200/50">9. Tipo de Atendimento</th>
+                                    <th className="px-4 py-3.5 text-[9px] font-black text-slate-400 uppercase tracking-widest border-r border-slate-200/50">10. Principal Demanda</th>
+                                    <th className="px-4 py-3.5 text-[9px] font-black text-slate-400 uppercase tracking-widest border-r border-slate-200/50">11. Sugestão SEDESE</th>
+                                    <th className="px-4 py-3.5 text-[9px] font-black text-slate-400 uppercase tracking-widest border-r border-slate-200/50">12. Observação</th>
+                                    <th className="px-4 py-3.5 text-[9px] font-black text-slate-400 uppercase tracking-widest">13. Assessor Resp.</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
-                                {apoiadoresFiltrados.map(a => {
-                                    const m = a.municipio!;
-                                    const initials = a.nome.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
-                                    const hasImage = a.fotoUrl && !a.fotoUrl.includes('placeholder') && !a.fotoUrl.includes('via.placeholder');
-                                    
-                                    return (
-                                        <tr 
-                                            key={a.id} 
-                                            onClick={() => setSelectedApoiador(a)}
-                                            className="hover:bg-slate-50/80 dark:hover:bg-slate-700/30 transition-colors cursor-pointer group"
-                                        >
-                                            <td className="px-6 py-4">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="size-8 rounded-full overflow-hidden shrink-0 bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600">
-                                                        {hasImage ? (
-                                                            <img src={a.fotoUrl} alt={a.nome} className="w-full h-full object-cover" />
-                                                        ) : (
-                                                            <div className="w-full h-full bg-gradient-to-br from-indigo-500 to-cyan-500 flex items-center justify-center text-[10px] text-white font-black">
-                                                                {initials}
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                    <div className="flex flex-col">
-                                                        <span className="text-sm font-black text-indigo-600 dark:text-indigo-400">
-                                                            {a.nome}
-                                                        </span>
-                                                        <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">
-                                                            {a.cargo}
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <div className="flex flex-col">
-                                                    <span className="text-sm font-bold text-navy-dark dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-                                                        {m.nome}
-                                                    </span>
-                                                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-                                                        Região: {m.regiao || '—'}
-                                                    </span>
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <div className="flex flex-wrap gap-1.5">
-                                                    <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold ${getStatusPrefeitoColor(m.statusPrefeito)}`}>
-                                                        {m.statusPrefeito || 'Não informado'}
-                                                    </span>
-                                                    {m.lincolnFechado && (
-                                                        <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-500 text-white flex items-center gap-1">
-                                                            <span className="material-symbols-outlined text-[12px]">beenhere</span>
-                                                            Lincoln Portela
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <div className="flex flex-col items-center gap-1">
+                                {apoiadoresFiltrados.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={13} className="px-6 py-12 text-center text-slate-500">
+                                            <span className="material-symbols-outlined text-5xl mb-2 opacity-35">volunteer_activism</span>
+                                            <p className="font-bold text-slate-650 dark:text-slate-300">Nenhum apoiador encontrado</p>
+                                            <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
+                                                A base de dados de apoiadores está vazia. Clique no botão de sincronização no topo para configurar a planilha e realizar a importação de dados.
+                                            </p>
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    apoiadoresFiltrados.map(a => {
+                                        const m = a.municipio!;
+                                        const initials = a.nome.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+                                        const hasImage = a.fotoUrl && !a.fotoUrl.includes('placeholder') && !a.fotoUrl.includes('via.placeholder');
+                                        
+                                        return (
+                                            <tr 
+                                                key={a.id} 
+                                                onClick={() => setSelectedApoiador(a)}
+                                                className="hover:bg-slate-50/80 dark:hover:bg-slate-700/30 transition-colors cursor-pointer group text-[11px] whitespace-nowrap"
+                                            >
+                                                {/* 1. Cidade */}
+                                                <td className="px-4 py-3.5 border-r border-slate-100 dark:border-slate-700/50 font-bold text-slate-800 dark:text-slate-100">
+                                                    {m?.nome || '—'}
+                                                    {m?.regiao && <span className="block text-[8px] text-slate-400 font-bold uppercase tracking-tight">{m.regiao}</span>}
+                                                </td>
+                                                {/* 2. Nome Apoiador */}
+                                                <td className="px-4 py-3.5 border-r border-slate-100 dark:border-slate-700/50">
                                                     <div className="flex items-center gap-2">
-                                                        <span className="text-[9px] font-black text-slate-400 uppercase">Alê</span>
-                                                        <span className="text-xs font-black text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/20 px-1.5 py-0.5 rounded">
-                                                            {m.votacaoAle?.toLocaleString() || '—'}
-                                                        </span>
+                                                        <div className="size-6 rounded-full overflow-hidden shrink-0 bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-100/50 dark:border-indigo-900/30 flex items-center justify-center text-[9px] text-indigo-600 dark:text-indigo-400 font-black">
+                                                            {initials}
+                                                        </div>
+                                                        <div className="flex flex-col">
+                                                            <span className="font-bold text-indigo-600 dark:text-indigo-400">{a.nome}</span>
+                                                            {a.cargo && <span className="text-[8px] text-slate-400 font-bold uppercase tracking-tight">{a.cargo}</span>}
+                                                        </div>
                                                     </div>
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="text-[9px] font-black text-slate-400 uppercase">Lincoln</span>
-                                                        <span className="text-xs font-black text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-1.5 py-0.5 rounded">
-                                                            {m.votacaoLincoln?.toLocaleString() || '—'}
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <div className="flex items-center gap-2">
-                                                    <div className="size-6 rounded-full bg-slate-100 flex items-center justify-center">
-                                                        <span className="material-symbols-outlined text-[14px] text-slate-400">person</span>
-                                                    </div>
-                                                    <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">
-                                                        {a.assessor?.nome || '—'}
+                                                </td>
+                                                {/* 3. Status do Prefeito */}
+                                                <td className="px-4 py-3.5 border-r border-slate-100 dark:border-slate-700/50">
+                                                    <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold ${getStatusPrefeitoColor(a.statusPrefeito || m?.statusPrefeito)}`}>
+                                                        {a.statusPrefeito || m?.statusPrefeito || 'Não informado'}
                                                     </span>
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <div className="flex flex-col gap-1 max-w-[200px]">
-                                                    {m.statusAtendimento && (
-                                                        <span className={`w-fit px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider ${
-                                                            m.statusAtendimento === 'Contemplado' 
-                                                            ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' 
-                                                            : 'bg-amber-50 text-amber-600 border border-amber-100'
+                                                </td>
+                                                {/* 4. Votação Alê */}
+                                                <td className="px-4 py-3.5 border-r border-slate-100 dark:border-slate-700/50 font-bold text-slate-750 dark:text-slate-200">
+                                                    {(a.votacaoAle || m?.votacaoAle)?.toLocaleString('pt-BR') || '—'}
+                                                </td>
+                                                {/* 5. Votação Lincoln */}
+                                                <td className="px-4 py-3.5 border-r border-slate-100 dark:border-slate-700/50 font-bold text-slate-750 dark:text-slate-200">
+                                                    {(a.votacaoLincoln || m?.votacaoLincoln)?.toLocaleString('pt-BR') || '—'}
+                                                </td>
+                                                {/* 6. IDENE? */}
+                                                <td className="px-4 py-3.5 border-r border-slate-100 dark:border-slate-700/50">
+                                                    <span className={`px-2 py-0.5 rounded text-[9px] font-black tracking-wider ${
+                                                        (a.idene || m?.idene) 
+                                                        ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' 
+                                                        : 'bg-slate-100 text-slate-400 dark:bg-slate-800'
+                                                    }`}>
+                                                        {(a.idene || m?.idene) ? 'SIM' : 'NÃO'}
+                                                    </span>
+                                                </td>
+                                                {/* 7. Lincoln Portela Fechado? */}
+                                                <td className="px-4 py-3.5 border-r border-slate-100 dark:border-slate-700/50">
+                                                    <span className={`px-2 py-0.5 rounded text-[9px] font-black tracking-wider ${
+                                                        (a.lincolnFechado || m?.lincolnFechado) 
+                                                        ? 'bg-emerald-100 text-emerald-705 dark:bg-emerald-900/30 dark:text-emerald-400' 
+                                                        : 'bg-slate-100 text-slate-400 dark:bg-slate-800'
+                                                    }`}>
+                                                        {(a.lincolnFechado || m?.lincolnFechado) ? 'SIM' : 'NÃO'}
+                                                    </span>
+                                                </td>
+                                                {/* 8. Status de Atendimento */}
+                                                <td className="px-4 py-3.5 border-r border-slate-100 dark:border-slate-700/50">
+                                                    {(a.statusAtendimento || m?.statusAtendimento) ? (
+                                                        <span className={`px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider ${
+                                                            (a.statusAtendimento || m?.statusAtendimento) === 'Contemplado' 
+                                                            ? 'bg-emerald-50 text-emerald-600 border border-emerald-100 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-900/30' 
+                                                            : 'bg-amber-50 text-amber-600 border border-amber-100 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-900/30'
                                                         }`}>
-                                                            {m.statusAtendimento}
+                                                            {a.statusAtendimento || m?.statusAtendimento}
                                                         </span>
-                                                    )}
-                                                    {m.principalDemanda && (
-                                                        <p className="text-[10px] text-slate-600 dark:text-slate-300 font-bold truncate">
-                                                            {m.principalDemanda}
-                                                        </p>
-                                                    )}
-                                                    {m.sugestaoSedese && (
-                                                        <span className="text-[9px] text-indigo-500 font-bold bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-100 w-fit">
-                                                            SEDESE: {m.sugestaoSedese}
+                                                    ) : '—'}
+                                                </td>
+                                                {/* 9. Tipo de Atendimento */}
+                                                <td className="px-4 py-3.5 border-r border-slate-100 dark:border-slate-700/50 text-slate-650 dark:text-slate-300">
+                                                    {a.tipoAtendimento || m?.tipoAtendimento || '—'}
+                                                </td>
+                                                {/* 10. Principal Demanda */}
+                                                <td className="px-4 py-3.5 border-r border-slate-100 dark:border-slate-700/50 text-slate-750 dark:text-slate-200 max-w-[200px] truncate" title={a.principalDemanda || m?.principalDemanda || ''}>
+                                                    {a.principalDemanda || m?.principalDemanda || '—'}
+                                                </td>
+                                                {/* 11. Sugestão SEDESE */}
+                                                <td className="px-4 py-3.5 border-r border-slate-100 dark:border-slate-700/50">
+                                                    {(a.sugestaoSedese || m?.sugestaoSedese) ? (
+                                                        <span className="px-2 py-0.5 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 border border-indigo-100 rounded text-[9px] font-bold">
+                                                            {a.sugestaoSedese || m?.sugestaoSedese}
                                                         </span>
-                                                    )}
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
+                                                    ) : '—'}
+                                                </td>
+                                                {/* 12. Observação */}
+                                                <td className="px-4 py-3.5 border-r border-slate-100 dark:border-slate-700/50 text-slate-500 dark:text-slate-400 italic max-w-[200px] truncate" title={a.observacao || m?.observacao || ''}>
+                                                    {a.observacao || m?.observacao || '—'}
+                                                </td>
+                                                {/* 13. Assessor Resp. */}
+                                                <td className="px-4 py-3.5 text-slate-750 dark:text-slate-200 font-semibold">
+                                                    {a.assessorResp || a.assessor?.nome || '—'}
+                                                </td>
+                                            </tr>
+                                        );
+                                    })
+                                )}
                             </tbody>
                         </table>
                     </div>

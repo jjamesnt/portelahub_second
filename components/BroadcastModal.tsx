@@ -100,7 +100,7 @@ const BroadcastModal: React.FC<BroadcastModalProps> = ({ isOpen, onClose, event 
             }
 
             const mapUrl = event.local ? `https://maps.google.com/?q=${encodeURIComponent(event.local)}` : '';
-            const message = `Portela App informa:\n\n*Agenda: ${event.titulo}*\n📅 ${new Date(event.data).toLocaleDateString('pt-BR')} ${event.hora !== 'Dia Inteiro' ? `às ${event.hora}` : ''}\n📍 ${event.local}${mapUrl ? `\n🗺️ Mapa: ${mapUrl}` : ''}\n${event.descricao ? `\n${event.descricao}` : ''}`;
+            const message = `Portela Hub informa:\n\n*Agenda: ${event.titulo}*\n📅 ${new Date(event.data).toLocaleDateString('pt-BR')} ${event.hora !== 'Dia Inteiro' ? `às ${event.hora}` : ''}\n📍 ${event.local}${mapUrl ? `\n🗺️ Mapa: ${mapUrl}` : ''}\n${event.descricao ? `\n${event.descricao}` : ''}`;
 
             await broadcastEvent({
                 eventId: event.id,
@@ -235,7 +235,7 @@ const BroadcastModal: React.FC<BroadcastModalProps> = ({ isOpen, onClose, event 
                                 <div className="text-xs text-slate-600 dark:text-slate-300 whitespace-pre-wrap font-mono bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-100 dark:border-slate-700 max-h-32 overflow-y-auto">
                                     {(() => {
                                         const mapUrl = event.local ? `https://maps.google.com/?q=${encodeURIComponent(event.local)}` : '';
-                                        return `Portela App informa:\n\n*Agenda: ${event.titulo}*\n📅 ${new Date(event.data).toLocaleDateString('pt-BR')} ${event.hora !== 'Dia Inteiro' ? `às ${event.hora}` : ''}\n📍 ${event.local}${mapUrl ? `\n🗺️ Mapa: ${mapUrl}` : ''}\n${event.descricao ? `\n${event.descricao}` : ''}`;
+                                        return `Portela Hub informa:\n\n*Agenda: ${event.titulo}*\n📅 ${new Date(event.data).toLocaleDateString('pt-BR')} ${event.hora !== 'Dia Inteiro' ? `às ${event.hora}` : ''}\n📍 ${event.local}${mapUrl ? `\n🗺️ Mapa: ${mapUrl}` : ''}\n${event.descricao ? `\n${event.descricao}` : ''}`;
                                     })()}
                                 </div>
                             </div>

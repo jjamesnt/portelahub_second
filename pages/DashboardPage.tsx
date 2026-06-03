@@ -77,7 +77,7 @@ const CoberturaMap: React.FC<{
         <div className="lg:col-span-2 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm h-[600px] flex flex-col relative group/map">
             <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center bg-white dark:bg-slate-800 z-[1000]">
                 <div>
-                    <h4 className="font-bold text-navy-dark dark:text-white">Inteligência Territorial Portela App</h4>
+                    <h4 className="font-bold text-navy-dark dark:text-white">Inteligência Territorial Portela Hub</h4>
                     <p className="text-xs text-slate-500">Mapa dinâmico de influência e alocação</p>
                 </div>
                 <div className="bg-slate-100 dark:bg-slate-700 rounded-lg p-1 flex gap-1">

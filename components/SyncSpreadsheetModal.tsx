@@ -118,7 +118,7 @@ const SyncSpreadsheetModal: React.FC<SyncSpreadsheetModalProps> = ({ isOpen, onC
 
     // Ícones e labels dos alvos
     const options = [
-        { value: 'apoiadores', label: 'Guia Apoiadores & Municípios', icon: 'volunteer_activism' },
+        { value: 'apoiadores', label: 'Guia Apoiadores', icon: 'volunteer_activism' },
         { value: 'liderancas', label: 'Guia Lideranças', icon: 'groups' },
         { value: 'assessores', label: 'Guia Assessores', icon: 'badge' },
         { value: 'recursos', label: 'Guia Recursos', icon: 'payments' },
@@ -133,7 +133,7 @@ const SyncSpreadsheetModal: React.FC<SyncSpreadsheetModalProps> = ({ isOpen, onC
                 'Status de atendimento', 'Tipo de atendimento', 'Principal Demanda',
                 'Sugestão de Programa SEDESE', 'OBSERVAÇÃO', 'Assessor Resp.'
             ],
-            description: 'Associa apoiadores aos municípios correspondentes, atualizando dados de prefeitura e demandas.'
+            description: 'Cadastra ou atualiza os apoiadores associando-os aos seus respectivos municípios.'
         },
         liderancas: {
             columns: [

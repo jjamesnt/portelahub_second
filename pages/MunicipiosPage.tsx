@@ -90,7 +90,6 @@ const MunicipiosPage: React.FC<MunicipiosPageProps> = ({ navigateTo }) => {
     const [filterAssessor, setFilterAssessor] = useState<string>('Todos');
     const [filterStatusPrefeito, setFilterStatusPrefeito] = useState<string>('Todos');
     const [filterStatusAtividade, setFilterStatusAtividade] = useState<string[]>([]);
-    const [onlyActive, setOnlyActive] = useState(true);
 
     // Sorting
     const [sortField, setSortField] = useState<SortField | null>(null);
@@ -177,19 +176,8 @@ const MunicipiosPage: React.FC<MunicipiosPageProps> = ({ navigateTo }) => {
     // Filter and sort municipalities
     const municipiosFiltrados = useMemo(() => {
         let filtered = municipios.filter(m => {
-            // Apenas ativos filter
-            if (onlyActive) {
-                const hasData = (m.totalApoiadores && m.totalApoiadores > 0) || 
-                                (m.totalRecursos && m.totalRecursos > 0) || 
-                                (m.totalDemandas && m.totalDemandas > 0) || 
-                                ((m.statusPrefeito as any) && (m.statusPrefeito as any) !== 'Não informado' && m.statusPrefeito !== 'Não') || 
-                                m.lincolnFechado || 
-                                m.idene || 
-                                m.statusAtendimento || 
-                                m.principalDemanda || 
-                                m.sugestaoSedese;
-                if (!hasData) return false;
-            }
+            // Apenas municípios com apoiadores ativos
+            if (!m.totalApoiadores || m.totalApoiadores === 0) return false;
             // Search filter
             if (debouncedSearch && !m.nome.toLowerCase().includes(debouncedSearch.toLowerCase())) return false;
             // Region filter
@@ -230,7 +218,7 @@ const MunicipiosPage: React.FC<MunicipiosPageProps> = ({ navigateTo }) => {
         }
 
         return filtered;
-    }, [debouncedSearch, filterRegion, filterAssessor, filterStatusPrefeito, filterStatusAtividade, municipios, sortField, sortDirection, onlyActive]);
+    }, [debouncedSearch, filterRegion, filterAssessor, filterStatusPrefeito, filterStatusAtividade, municipios, sortField, sortDirection]);
 
     // Summary stats
     const summaryStats = useMemo(() => ({
@@ -386,16 +374,7 @@ const MunicipiosPage: React.FC<MunicipiosPageProps> = ({ navigateTo }) => {
 
             <div className="bg-white dark:bg-slate-800 p-3 md:p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 mb-6 md:mb-8">
                 <div className="flex flex-col gap-3">
-                    <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 items-start sm:items-center justify-between">
-                        <div 
-                            className="flex items-center gap-2 px-3 py-1.5 bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-100/50 dark:border-indigo-900/30 rounded-xl cursor-pointer select-none transition-all hover:bg-indigo-50 dark:hover:bg-indigo-950/30" 
-                            onClick={() => setOnlyActive(!onlyActive)}
-                        >
-                            <span className={`material-symbols-outlined text-[24px] transition-all leading-none ${onlyActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'}`}>
-                                {onlyActive ? 'toggle_on' : 'toggle_off'}
-                            </span>
-                            <span className="text-xs md:text-sm font-bold text-indigo-950 dark:text-indigo-300">Espelhar apenas municípios ativos</span>
-                        </div>
+                    <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 items-start sm:items-center justify-end">
                         {hasActiveFilters && (
                             <button
                                 onClick={clearFilters}
@@ -499,47 +478,6 @@ const MunicipiosPage: React.FC<MunicipiosPageProps> = ({ navigateTo }) => {
                                                             <span className={`inline-block w-fit mt-1 px-1.5 py-0.5 text-[8px] font-bold rounded-md ${regionColor.bg} ${regionColor.text} uppercase tracking-tighter`}>
                                                                 {municipio.regiao}
                                                             </span>
-                                                        </div>
-                                                        
-                                                        {/* Tags de contatos e apoios relacionados (Apoiadores, Lideranças) */}
-                                                        <div className="flex flex-col gap-1">
-                                                            {/* Tags de Apoiadores Relacionados */}
-                                                            {municipio.apoiadores && municipio.apoiadores.length > 0 && (
-                                                                <div className="flex flex-wrap gap-1.5 max-w-[320px] md:max-w-[400px]">
-                                                                    {municipio.apoiadores.map((ap: any) => (
-                                                                        <span 
-                                                                            key={ap.id}
-                                                                            title={`${ap.nome} - ${ap.cargo || 'Apoiador'}`}
-                                                                            className="inline-flex items-center gap-1 px-2 py-0.5 bg-indigo-50/80 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border border-indigo-100/60 dark:border-indigo-900/30 rounded-full text-[9px] font-black tracking-tight"
-                                                                        >
-                                                                            <span className="material-symbols-outlined text-[10px] text-indigo-400">person</span>
-                                                                            <span>{ap.nome}</span>
-                                                                            {ap.cargo && (
-                                                                                <span className="opacity-60 font-bold text-[8px]">({ap.cargo})</span>
-                                                                            )}
-                                                                        </span>
-                                                                    ))}
-                                                                </div>
-                                                            )}
-                                                            
-                                                            {/* Tags de Lideranças Relacionadas */}
-                                                            {municipioLiderancas && municipioLiderancas.length > 0 && (
-                                                                <div className="flex flex-wrap gap-1.5 max-w-[320px] md:max-w-[400px]">
-                                                                    {municipioLiderancas.map((lp: any) => (
-                                                                        <span 
-                                                                            key={lp.id}
-                                                                            title={`${lp.nome} - ${lp.cargo || 'Liderança'}`}
-                                                                            className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-50/80 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-100/60 dark:border-amber-900/30 rounded-full text-[9px] font-black tracking-tight"
-                                                                        >
-                                                                            <span className="material-symbols-outlined text-[10px] text-amber-500">groups</span>
-                                                                            <span>{lp.nome}</span>
-                                                                            {lp.cargo && (
-                                                                                <span className="opacity-60 font-bold text-[8px]">({lp.cargo})</span>
-                                                                            )}
-                                                                        </span>
-                                                                    ))}
-                                                                </div>
-                                                            )}
                                                         </div>
                                                     </div>
                                                 </td>

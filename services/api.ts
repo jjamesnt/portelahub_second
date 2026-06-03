@@ -881,7 +881,6 @@ export const syncSpreadsheetData = async (csvUrl: string): Promise<{ success: nu
         }
 
         let errorCount = 0;
-        const municipioUpdates: any[] = [];
         const apoiadorUpdates: any[] = [];
 
         // 4. Processar cada linha
@@ -901,31 +900,6 @@ export const syncSpreadsheetData = async (csvUrl: string): Promise<{ success: nu
                 errorCount++;
                 continue;
             }
-
-            let assessorNome = getCol("Assessor Resp");
-            if (assessorNome && normalize(assessorNome) === 'deputada') assessorNome = 'Alê Portela';
-            
-            let assessorId = null;
-            if (assessorNome) {
-                const normSearch = normalize(assessorNome);
-                const matchKey = Object.keys(assessorMap).find(k => k === normSearch || k.includes(normSearch) || normSearch.includes(k));
-                assessorId = matchKey ? assessorMap[matchKey] : null;
-            }
-
-            municipioUpdates.push({
-                id: mun.id,
-                status_prefeito: getCol("Status do Prefeito"),
-                votacao_ale: parseNum(getCol("Votação Alê")),
-                votacao_lincoln: parseNum(getCol("Votação Lincoln")),
-                idene: isSim(getCol("IDENE?")),
-                lincoln_fechado: isSim(getCol("Lincoln Portela")) || isSim(getCol("Lincoln Portela fechado?")),
-                status_atendimento: getCol("Status de atendimento"),
-                tipo_atendimento: getCol("Tipo de atendimento"),
-                principal_demanda: getCol("Principal Demanda"),
-                sugestao_sedese: getCol("Sugestão de Programa SEDESE"),
-                observacao: getCol("OBSERVAÇÃO"),
-                assessor_id: assessorId
-            });
 
             let nomeSemCargo = nomeBruto;
             let cargoDetectado = '';
@@ -957,7 +931,6 @@ export const syncSpreadsheetData = async (csvUrl: string): Promise<{ success: nu
 
         // 5. Execuções via API (Assumindo que a API suporta bulk upsert ou processando em partes)
         console.log(`[Sync] Sincronizando dados via API...`);
-        await apiClient.post('/api/sync/bulk-municipios', { data: municipioUpdates });
         await apiClient.post('/api/sync/bulk-apoiadores', { data: apoiadorUpdates });
 
         return { success: apoiadorUpdates.length, errors: errorCount };

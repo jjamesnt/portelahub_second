@@ -238,7 +238,7 @@ const SolicitacoesReportModal: React.FC<SolicitacoesReportModalProps> = ({ isOpe
 
                         {/* Footer */}
                         <div className="mt-auto pt-4 border-t border-slate-200 flex justify-between items-center opacity-50">
-                            <p className="text-[8px] font-bold uppercase tracking-widest text-slate-500">Documento Gerado via Portela App - Sistema de Gestão Estratégica</p>
+                            <p className="text-[8px] font-bold uppercase tracking-widest text-slate-500">Documento Gerado via Portela Hub - Sistema de Gestão Estratégica</p>
                             <p className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">
                                 Página {pageIdx + 1} de {pages.length}
                             </p>

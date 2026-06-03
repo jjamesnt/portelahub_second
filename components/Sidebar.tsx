@@ -106,7 +106,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, setActivePage, onSyncClic
                                 <span className="material-symbols-outlined text-white font-bold">hub</span>
                             </div>
                             <div>
-                                <h1 className="text-lg font-extrabold tracking-tight leading-none text-white">Portela <span className="text-turquoise">App</span></h1>
+                                <h1 className="text-lg font-extrabold tracking-tight leading-none text-white">Portela <span className="text-turquoise">Hub</span></h1>
                                 <p className="text-[10px] text-turquoise/70 uppercase tracking-widest font-bold mt-0.5">Gestão Inteligente</p>
                             </div>
                         </div>
@@ -193,7 +193,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, setActivePage, onSyncClic
                                 <span className="text-[10px] text-slate-400 truncate font-medium">James Rizo - (31) 98421-1900</span>
                             </div>
                             <a
-                                href="https://wa.me/5531984211900?text=Preciso%20de%20suporte%20no%20Portela%20App."
+                                href="https://wa.me/5531984211900?text=Preciso%20de%20suporte%20no%20Portela%20Hub."
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="flex items-center justify-center gap-2 p-2.5 rounded-lg bg-[#25D366]/10 hover:bg-[#25D366]/20 text-[#25D366] border border-[#25D366]/20 transition-all active:scale-95"
